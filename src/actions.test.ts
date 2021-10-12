@@ -1,4 +1,4 @@
-import { parseCallKey, toCallKey } from './utils'
+import { parseCallKey, toCallKey } from './utils/callKeys'
 
 describe('actions', () => {
   describe('#parseCallKey', () => {

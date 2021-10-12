@@ -6,7 +6,7 @@ import {
   removeMulticallListeners,
   updateMulticallResults
 } from './actions'
-import { toCallKey } from './utils'
+import { toCallKey } from './utils/callKeys'
 
 export interface MulticallState {
   callListeners?: {

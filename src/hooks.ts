@@ -4,7 +4,7 @@ import { useActiveWeb3React } from '../../hooks/web3'
 import { useBlockNumber } from '../application/hooks'
 import { addMulticallListeners, ListenerOptions, removeMulticallListeners } from './actions'
 import { useAppDispatch, useAppSelector } from './storeHooks'
-import { Call, parseCallKey, toCallKey } from './utils'
+import { Call, parseCallKey, toCallKey } from './utils/callKeys'
 
 export interface Result extends ReadonlyArray<any> {
   readonly [key: string]: any
