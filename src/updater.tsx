@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { useAppDispatch, useAppSelector } from 'state/hooks'
 import { UniswapInterfaceMulticall } from 'types/v3'
-
 import { useMulticall2Contract } from '../../hooks/useContract'
 import useDebounce from '../../hooks/useDebounce'
 import { useActiveWeb3React } from '../../hooks/web3'
 import chunkArray from '../../utils/chunkArray'
 import { retry, RetryableError } from '../../utils/retry'
 import { useBlockNumber } from '../application/hooks'
-import { AppState } from '../index'
 import { errorFetchingMulticallResults, fetchingMulticallResults, updateMulticallResults } from './actions'
+import type { AppState } from './store'
+import { useAppDispatch, useAppSelector } from './storeHooks'
 import { Call, parseCallKey } from './utils'
 
+// TODO move to consts
 const DEFAULT_GAS_REQUIRED = 1_000_000
 
 /**

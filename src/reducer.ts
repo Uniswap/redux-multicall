@@ -1,5 +1,4 @@
 import { createReducer } from '@reduxjs/toolkit'
-
 import {
   addMulticallListeners,
   errorFetchingMulticallResults,
@@ -36,7 +35,7 @@ const initialState: MulticallState = {
   callResults: {}
 }
 
-export default createReducer(initialState, builder =>
+export const multicallReducer = createReducer(initialState, builder =>
   builder
     .addCase(
       addMulticallListeners,

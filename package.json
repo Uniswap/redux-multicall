@@ -30,12 +30,14 @@
     "@types/react": "^17.0.28",
     "ethers": "^5.4.7",
     "react": "^17.0.2",
+    "react-redux": "^7.2.5",
     "tsdx": "^0.14.1"
   },
   "peerDependencies": {
-    "ethers": "5.x",
     "@reduxjs/toolkit": "1.x",
-    "react": "^17.x"
+    "ethers": "5.x",
+    "react": "^17.x",
+    "react-redux": "^7.x"
   },
   "engines": {
     "node": ">=10"
