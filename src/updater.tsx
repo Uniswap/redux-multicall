@@ -1,16 +1,16 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { UniswapInterfaceMulticall } from 'types/v3'
 import { useMulticall2Contract } from '../../hooks/useContract'
-import useDebounce from '../../hooks/useDebounce'
 import { useActiveWeb3React } from '../../hooks/web3'
-import chunkArray from '../../utils/chunkArray'
-import { retry, RetryableError } from '../../utils/retry'
 import { useBlockNumber } from '../application/hooks'
 import { errorFetchingMulticallResults, fetchingMulticallResults, updateMulticallResults } from './actions'
 import { DEFAULT_GAS_REQUIRED } from './consts'
 import type { AppState } from './store'
 import { useAppDispatch, useAppSelector } from './storeHooks'
-import { Call, parseCallKey } from './utils'
+import { Call, parseCallKey } from './utils/callKeys'
+import chunkArray from './utils/chunkArray'
+import { retry, RetryableError } from './utils/retry'
+import useDebounce from './utils/useDebounce'
 
 /**
  * Fetches a chunk of calls, enforcing a minimum block number constraint
