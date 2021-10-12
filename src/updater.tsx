@@ -7,12 +7,10 @@ import chunkArray from '../../utils/chunkArray'
 import { retry, RetryableError } from '../../utils/retry'
 import { useBlockNumber } from '../application/hooks'
 import { errorFetchingMulticallResults, fetchingMulticallResults, updateMulticallResults } from './actions'
+import { DEFAULT_GAS_REQUIRED } from './consts'
 import type { AppState } from './store'
 import { useAppDispatch, useAppSelector } from './storeHooks'
 import { Call, parseCallKey } from './utils'
-
-// TODO move to consts
-const DEFAULT_GAS_REQUIRED = 1_000_000
 
 /**
  * Fetches a chunk of calls, enforcing a minimum block number constraint

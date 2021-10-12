@@ -1,0 +1,1 @@
+export const DEFAULT_GAS_REQUIRED = 1_000_000
