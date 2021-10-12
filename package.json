@@ -25,8 +25,17 @@
   },
   "dependencies": {},
   "devDependencies": {
+    "@reduxjs/toolkit": "^1.6.2",
     "@types/jest": "^24.0.25",
+    "@types/react": "^17.0.28",
+    "ethers": "^5.4.7",
+    "react": "^17.0.2",
     "tsdx": "^0.14.1"
+  },
+  "peerDependencies": {
+    "ethers": "5.x",
+    "@reduxjs/toolkit": "1.x",
+    "react": "^17.x"
   },
   "engines": {
     "node": ">=10"
