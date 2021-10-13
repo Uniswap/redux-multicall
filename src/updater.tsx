@@ -1,11 +1,12 @@
+import type { providers } from 'ethers'
 import { useEffect, useMemo, useRef } from 'react'
-import { useMulticall2Contract } from '../../hooks/useContract'
 import { errorFetchingMulticallResults, fetchingMulticallResults, updateMulticallResults } from './actions'
 import { isDebug } from './config'
-import { DEFAULT_GAS_REQUIRED } from './consts'
+import { DEFAULT_GAS_REQUIRED } from './constants'
 import type { AppState } from './store'
 import { useAppDispatch, useAppSelector } from './storeHooks'
 import { UniswapInterfaceMulticall } from './types'
+import { useMulticall2Contract } from './useContract'
 import { Call, parseCallKey } from './utils/callKeys'
 import chunkArray from './utils/chunkArray'
 import { retry, RetryableError } from './utils/retry'
@@ -128,14 +129,15 @@ export function outdatedListeningKeys(
 interface Props {
 	latestBlockNumber: number
   chainId: number // TODO this approach may not work well for multi-chain
+  library: providers.Provider // // Ethers or web3
 }
 
-export default function Updater({latestBlockNumber, chainId}: Props): null {
+export default function Updater({latestBlockNumber, chainId, library}: Props): null {
   const dispatch = useAppDispatch()
   const state = useAppSelector(state => state.multicall)
   // wait for listeners to settle before triggering updates
   const debouncedListeners = useDebounce(state.callListeners, 100)
-  const multicall2Contract = useMulticall2Contract()
+  const multicall2Contract = useMulticall2Contract(chainId, library)
   const cancellations = useRef<{ blockNumber: number; cancellations: (() => void)[] }>()
 
   const listeningKeys: { [callKey: string]: number } = useMemo(() => {

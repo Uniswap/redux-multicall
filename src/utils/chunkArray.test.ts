@@ -1,4 +1,4 @@
-import { DEFAULT_GAS_REQUIRED } from '..'
+import { DEFAULT_GAS_REQUIRED } from '../constants'
 import chunkArray from './chunkArray'
 
 describe('#chunkArray', () => {

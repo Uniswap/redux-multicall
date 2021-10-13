@@ -19,7 +19,6 @@
   },
   "scripts": {
     "build": "tsdx build",
-    "start": "tsdx watch",
     "test": "tsdx test",
     "prepublishOnly": "tsdx build",
     "contracts:compile": "typechain --target ethers-v5 --out-dir src/types './node_modules/@uniswap/v3-periphery/artifacts/contracts/**/*Multicall*.json'"
@@ -33,6 +32,7 @@
     "@uniswap/v3-periphery": "^1.2.1",
     "ethers": "^5.4.7",
     "react": "^17.0.2",
+    "react-dom": "^17.0.2",
     "react-redux": "^7.2.5",
     "tsdx": "^0.14.1",
     "typechain": "^5.2.0"

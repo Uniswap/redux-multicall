@@ -1,7 +1,7 @@
 // TODO remove the original file in the web interface as multicall is the only consumer
 // https://github.com/Uniswap/interface/blob/main/src/utils/chunkArray.ts
 
-import { CONSERVATIVE_BLOCK_GAS_LIMIT, DEFAULT_GAS_REQUIRED } from '../consts'
+import { CONSERVATIVE_BLOCK_GAS_LIMIT, DEFAULT_GAS_REQUIRED } from '../constants'
 
 // chunks array into chunks
 // evenly distributes items among the chunks
