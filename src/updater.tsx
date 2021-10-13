@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { UniswapInterfaceMulticall } from 'types/v3'
 import { useMulticall2Contract } from '../../hooks/useContract'
-import { useActiveWeb3React } from '../../hooks/web3'
-import { useBlockNumber } from '../application/hooks'
 import { errorFetchingMulticallResults, fetchingMulticallResults, updateMulticallResults } from './actions'
+import { isDebug } from './config'
 import { DEFAULT_GAS_REQUIRED } from './consts'
 import type { AppState } from './store'
 import { useAppDispatch, useAppSelector } from './storeHooks'
@@ -34,7 +33,7 @@ async function fetchChunk(
       { blockTag: blockNumber }
     )
 
-    if (process.env.NODE_ENV === 'development') {
+    if (isDebug) {
       returnData.forEach(({ gasUsed, returnData, success }, i) => {
         if (
           !success &&
@@ -51,7 +50,8 @@ async function fetchChunk(
     }
 
     return returnData
-  } catch (error) {
+  } catch (e) {
+    const error = e as any
     if (error.code === -32000 || error.message?.indexOf('header not found') !== -1) {
       throw new RetryableError(`header not found for block number ${blockNumber}`)
     }
@@ -125,13 +125,16 @@ export function outdatedListeningKeys(
   })
 }
 
-export default function Updater(): null {
+interface Props {
+	latestBlockNumber: number
+  chainId: number // TODO this approach may not work well for multi-chain
+}
+
+export default function Updater({latestBlockNumber, chainId}: Props): null {
   const dispatch = useAppDispatch()
   const state = useAppSelector(state => state.multicall)
   // wait for listeners to settle before triggering updates
   const debouncedListeners = useDebounce(state.callListeners, 100)
-  const latestBlockNumber = useBlockNumber()
-  const { chainId } = useActiveWeb3React()
   const multicall2Contract = useMulticall2Contract()
   const cancellations = useRef<{ blockNumber: number; cancellations: (() => void)[] }>()
 

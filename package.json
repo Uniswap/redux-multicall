@@ -12,7 +12,7 @@
     "uniswap",
     "ethereum"
   ],
-  "module": "dist/v3-sdk.esm.js",
+  "module": "dist/muticall.esm.js",
   "license": "MIT",
   "publishConfig": {
     "access": "public"

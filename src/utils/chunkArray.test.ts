@@ -1,4 +1,5 @@
-import chunkArray, { DEFAULT_GAS_REQUIRED } from './chunkArray'
+import { DEFAULT_GAS_REQUIRED } from '..'
+import chunkArray from './chunkArray'
 
 describe('#chunkArray', () => {
   it('size 1', () => {
