@@ -12,14 +12,13 @@ The usage of this library is similar to [RTK Query](https://redux-toolkit.js.org
 
 ```js
 // Somewhere in your app
-export const multicall = createMulticall({reducerPath: 'multicall'})
+export const multicall = createMulticall({ reducerPath: 'multicall' })
 
 // In your store's root reducer
 export const rootReducer = combineReducers({
   // Other reducers
-  [multicall.reducerPath]: multicall.reducer,
+  [multicall.reducerPath]: multicall.reducer
 })
-
 ```
 
 ## Alpha software
