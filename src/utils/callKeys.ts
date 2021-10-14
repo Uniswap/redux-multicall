@@ -1,8 +1,4 @@
-export interface Call {
-  address: string
-  callData: string
-  gasRequired?: number
-}
+import { Call } from '../types'
 
 export function toCallKey(call: Call): string {
   let key = `${call.address}-${call.callData}`

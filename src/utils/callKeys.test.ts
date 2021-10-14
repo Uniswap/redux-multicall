@@ -1,6 +1,6 @@
-import { parseCallKey, toCallKey } from './utils/callKeys'
+import { parseCallKey, toCallKey } from './callKeys'
 
-describe('actions', () => {
+describe('callKeys', () => {
   describe('#parseCallKey', () => {
     it('does not throw for invalid address', () => {
       expect(parseCallKey('0x-0x')).toEqual({ address: '0x', callData: '0x' })

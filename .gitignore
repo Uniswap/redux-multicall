@@ -66,4 +66,4 @@ jspm_packages/
 .pnp.*
 
 # generated contract types
-/src/types
+/src/abi/types

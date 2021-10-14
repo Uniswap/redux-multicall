@@ -1,12 +1,9 @@
 import { BigNumber, Contract, utils } from 'ethers'
 import { useEffect, useMemo } from 'react'
-import { addMulticallListeners, ListenerOptions, removeMulticallListeners } from './actions'
-import { useAppDispatch, useAppSelector } from './storeHooks'
-import { Call, parseCallKey, toCallKey } from './utils/callKeys'
-
-export interface Result extends ReadonlyArray<any> {
-  readonly [key: string]: any
-}
+import { useDispatch, useSelector } from 'react-redux'
+import type { MulticallContext } from './context'
+import type { Call, CallResult, CallState, CallStateResult, ListenerOptions, WithMulticallState } from './types'
+import { parseCallKey, toCallKey } from './utils/callKeys'
 
 type MethodArg = string | number | BigNumber
 type MethodArgs = Array<MethodArg | MethodArg[]>
@@ -24,13 +21,7 @@ function isValidMethodArgs(x: unknown): x is MethodArgs | undefined {
   )
 }
 
-interface CallResult {
-  readonly valid: boolean
-  readonly data: string | undefined
-  readonly blockNumber: number | undefined
-}
-
-const INVALID_RESULT: CallResult = { valid: false, blockNumber: undefined, data: undefined }
+export const INVALID_RESULT: CallResult = { valid: false, blockNumber: undefined, data: undefined }
 
 // use this options object
 export const NEVER_RELOAD: ListenerOptions = {
@@ -39,12 +30,14 @@ export const NEVER_RELOAD: ListenerOptions = {
 
 // the lowest level call for subscribing to contract data
 function useCallsData(
+  context: MulticallContext,
   chainId: number,
   calls: (Call | undefined)[],
   { blocksPerFetch }: ListenerOptions = { blocksPerFetch: 1 }
 ): CallResult[] {
-  const callResults = useAppSelector(state => state.multicall.callResults)
-  const dispatch = useAppDispatch()
+  const {reducerPath, actions} = context
+  const callResults = useSelector((state: WithMulticallState) => state[reducerPath].callResults)
+  const dispatch = useDispatch()
 
   const serializedCallKeys: string = useMemo(
     () =>
@@ -63,7 +56,7 @@ function useCallsData(
     if (!chainId || callKeys.length === 0) return undefined
     const calls = callKeys.map(key => parseCallKey(key))
     dispatch(
-      addMulticallListeners({
+      actions.addMulticallListeners({
         chainId,
         calls,
         options: { blocksPerFetch }
@@ -72,7 +65,7 @@ function useCallsData(
 
     return () => {
       dispatch(
-        removeMulticallListeners({
+        actions.removeMulticallListeners({
           chainId,
           calls,
           options: { blocksPerFetch }
@@ -98,17 +91,7 @@ function useCallsData(
   )
 }
 
-interface CallState {
-  readonly valid: boolean
-  // the result, or undefined if loading or errored/no data
-  readonly result: Result | undefined
-  // true if the result has never been fetched
-  readonly loading: boolean
-  // true if the result is not for the latest block
-  readonly syncing: boolean
-  // true if the call was made and is synced, but the return data is invalid
-  readonly error: boolean
-}
+
 
 const INVALID_CALL_STATE: CallState = { valid: false, result: undefined, loading: false, syncing: false, error: false }
 const LOADING_CALL_STATE: CallState = { valid: true, result: undefined, loading: true, syncing: true, error: false }
@@ -126,7 +109,7 @@ function toCallState(
   if (!contractInterface || !fragment || !latestBlockNumber) return LOADING_CALL_STATE
   const success = data && data.length > 2
   const syncing = (blockNumber ?? 0) < latestBlockNumber
-  let result: Result | undefined = undefined
+  let result: CallStateResult | undefined = undefined
   if (success && data) {
     try {
       result = contractInterface.decodeFunctionResult(fragment, data)
@@ -152,6 +135,7 @@ function toCallState(
 
 // formats many calls to a single function on a single contract, with the function name and inputs specified
 export function useSingleContractMultipleData(
+  context: MulticallContext,
   chainId: number,
   latestBlockNumber: number,
   contract: Contract | null | undefined,
@@ -192,7 +176,7 @@ export function useSingleContractMultipleData(
     [contract, callDatas, gasRequired]
   )
 
-  const results = useCallsData(chainId, calls, blocksPerFetch ? { blocksPerFetch } : undefined)
+  const results = useCallsData(context, chainId, calls, blocksPerFetch ? { blocksPerFetch } : undefined)
 
   return useMemo(() => {
     return results.map(result => toCallState(result, contract?.interface, fragment, latestBlockNumber))
@@ -200,6 +184,7 @@ export function useSingleContractMultipleData(
 }
 
 export function useMultipleContractSingleData(
+  context: MulticallContext,
   chainId: number,
   latestBlockNumber: number,
   addresses: (string | undefined)[],
@@ -236,7 +221,7 @@ export function useMultipleContractSingleData(
     [addresses, callData, gasRequired]
   )
 
-  const results = useCallsData(chainId, calls, blocksPerFetch ? { blocksPerFetch } : undefined)
+  const results = useCallsData(context, chainId, calls, blocksPerFetch ? { blocksPerFetch } : undefined)
 
   return useMemo(() => {
     return results.map(result => toCallState(result, contractInterface, fragment, latestBlockNumber))
@@ -244,6 +229,7 @@ export function useMultipleContractSingleData(
 }
 
 export function useSingleCallResult(
+  context: MulticallContext,
   chainId: number,
   latestBlockNumber: number,
   contract: Contract | null | undefined,
@@ -252,13 +238,14 @@ export function useSingleCallResult(
   options: Partial<ListenerOptions> & { gasRequired?: number } = {}
 ): CallState {
   return (
-    useSingleContractMultipleData(chainId, latestBlockNumber, contract, methodName, [inputs], options)[0] ??
+    useSingleContractMultipleData(context, chainId, latestBlockNumber, contract, methodName, [inputs], options)[0] ??
     INVALID_CALL_STATE
   )
 }
 
 // formats many calls to any number of functions on a single contract, with only the calldata specified
 export function useSingleContractWithCallData(
+  context: MulticallContext,
   chainId: number,
   latestBlockNumber: number,
   contract: Contract | null | undefined,
@@ -283,7 +270,7 @@ export function useSingleContractWithCallData(
     [contract, callDatas, gasRequired]
   )
 
-  const results = useCallsData(chainId, calls, blocksPerFetch ? { blocksPerFetch } : undefined)
+  const results = useCallsData(context, chainId, calls, blocksPerFetch ? { blocksPerFetch } : undefined)
 
   return useMemo(() => {
     return results.map((result, i) =>

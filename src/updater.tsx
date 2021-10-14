@@ -1,13 +1,11 @@
-import type { providers } from 'ethers'
-import { useEffect, useMemo, useRef } from 'react'
-import { errorFetchingMulticallResults, fetchingMulticallResults, updateMulticallResults } from './actions'
+import React, { useEffect, useMemo, useRef } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import type { UniswapInterfaceMulticall } from './abi/types'
 import { isDebug } from './config'
 import { DEFAULT_GAS_REQUIRED } from './constants'
-import type { AppState } from './store'
-import { useAppDispatch, useAppSelector } from './storeHooks'
-import { UniswapInterfaceMulticall } from './types'
-import { useMulticall2Contract } from './useContract'
-import { Call, parseCallKey } from './utils/callKeys'
+import type { MulticallContext } from './context'
+import type { Call, MulticallState, WithMulticallState } from './types'
+import { parseCallKey } from './utils/callKeys'
 import chunkArray from './utils/chunkArray'
 import { retry, RetryableError } from './utils/retry'
 import useDebounce from './utils/useDebounce'
@@ -68,7 +66,7 @@ async function fetchChunk(
  * @param chainId the current chain id
  */
 export function activeListeningKeys(
-  allListeners: AppState['multicall']['callListeners'],
+  allListeners: MulticallState['callListeners'],
   chainId?: number
 ): { [callKey: string]: number } {
   if (!allListeners || !chainId) return {}
@@ -99,7 +97,7 @@ export function activeListeningKeys(
  * @param latestBlockNumber the latest block number
  */
 export function outdatedListeningKeys(
-  callResults: AppState['multicall']['callResults'],
+  callResults: MulticallState['callResults'],
   listeningKeys: { [callKey: string]: number },
   chainId: number | undefined,
   latestBlockNumber: number | undefined
@@ -126,18 +124,19 @@ export function outdatedListeningKeys(
   })
 }
 
-interface Props {
+export interface UpdaterProps {
+  context: MulticallContext
+  chainId: number // For now, one updater is required for each chainId to be watched
 	latestBlockNumber: number
-  chainId: number // TODO this approach may not work well for multi-chain
-  library: providers.Provider // // Ethers or web3
+  contract: UniswapInterfaceMulticall
 }
 
-export default function Updater({latestBlockNumber, chainId, library}: Props): null {
-  const dispatch = useAppDispatch()
-  const state = useAppSelector(state => state.multicall)
+function Updater({context, chainId, latestBlockNumber, contract}: UpdaterProps): null {
+  const {actions, reducerPath} = context
+  const dispatch = useDispatch()
+  const state = useSelector((state: WithMulticallState) => state[reducerPath])
   // wait for listeners to settle before triggering updates
   const debouncedListeners = useDebounce(state.callListeners, 100)
-  const multicall2Contract = useMulticall2Contract(chainId, library)
   const cancellations = useRef<{ blockNumber: number; cancellations: (() => void)[] }>()
 
   const listeningKeys: { [callKey: string]: number } = useMemo(() => {
@@ -153,7 +152,7 @@ export default function Updater({latestBlockNumber, chainId, library}: Props): n
   ])
 
   useEffect(() => {
-    if (!latestBlockNumber || !chainId || !multicall2Contract) return
+    if (!latestBlockNumber || !chainId || !contract) return
 
     const outdatedCallKeys: string[] = JSON.parse(serializedOutdatedCallKeys)
     if (outdatedCallKeys.length === 0) return
@@ -166,7 +165,7 @@ export default function Updater({latestBlockNumber, chainId, library}: Props): n
     }
 
     dispatch(
-      fetchingMulticallResults({
+      actions.fetchingMulticallResults({
         calls,
         chainId,
         fetchingBlockNumber: latestBlockNumber
@@ -176,7 +175,7 @@ export default function Updater({latestBlockNumber, chainId, library}: Props): n
     cancellations.current = {
       blockNumber: latestBlockNumber,
       cancellations: chunkedCalls.map((chunk, index) => {
-        const { cancel, promise } = retry(() => fetchChunk(multicall2Contract, chunk, latestBlockNumber), {
+        const { cancel, promise } = retry(() => fetchChunk(contract, chunk, latestBlockNumber), {
           n: Infinity,
           minWait: 1000,
           maxWait: 2500
@@ -208,7 +207,7 @@ export default function Updater({latestBlockNumber, chainId, library}: Props): n
             // dispatch any new results
             if (Object.keys(results).length > 0)
               dispatch(
-                updateMulticallResults({
+                actions.updateMulticallResults({
                   chainId,
                   results,
                   blockNumber: latestBlockNumber
@@ -219,7 +218,7 @@ export default function Updater({latestBlockNumber, chainId, library}: Props): n
             if (erroredCalls.length > 0) {
               console.debug('Calls errored in fetch', erroredCalls)
               dispatch(
-                errorFetchingMulticallResults({
+                actions.errorFetchingMulticallResults({
                   calls: erroredCalls,
                   chainId,
                   fetchingBlockNumber: latestBlockNumber
@@ -234,7 +233,7 @@ export default function Updater({latestBlockNumber, chainId, library}: Props): n
             }
             console.error('Failed to fetch multicall chunk', chunk, chainId, error)
             dispatch(
-              errorFetchingMulticallResults({
+              actions.errorFetchingMulticallResults({
                 calls: chunk,
                 chainId,
                 fetchingBlockNumber: latestBlockNumber
@@ -244,7 +243,14 @@ export default function Updater({latestBlockNumber, chainId, library}: Props): n
         return cancel
       })
     }
-  }, [chainId, multicall2Contract, dispatch, serializedOutdatedCallKeys, latestBlockNumber])
+  }, [chainId, contract, dispatch, serializedOutdatedCallKeys, latestBlockNumber])
 
   return null
+}
+
+export function createUpdater(context: MulticallContext) {
+  const UpdaterContextBound = (props: Omit<UpdaterProps, 'context'>) => {
+    return (<Updater context={context} {...props}/>)
+  }
+  return UpdaterContextBound
 }
