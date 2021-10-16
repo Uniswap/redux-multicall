@@ -21,7 +21,8 @@
     "build": "tsdx build",
     "test": "tsdx test",
     "prepublishOnly": "tsdx build",
-    "contracts:compile": "typechain --target ethers-v5 --out-dir src/abi/types './node_modules/@uniswap/v3-periphery/artifacts/contracts/**/*Multicall*.json'"
+    "contracts:compile": "typechain --target ethers-v5 --out-dir src/abi/types './node_modules/@uniswap/v3-periphery/artifacts/contracts/**/*Multicall*.json'",
+    "postinstall": "tsdx build"
   },
   "dependencies": {
     "@uniswap/v3-periphery": "^1.2.1"
