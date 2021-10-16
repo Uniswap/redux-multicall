@@ -1,6 +1,6 @@
 # MultiCall
 
-A library for fetching, batching, and caching chain state via the MultiCall contract.
+A React + Redux library for fetching, batching, and caching chain state via the MultiCall contract.
 
 ## Setup
 

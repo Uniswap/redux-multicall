@@ -1,13 +1,13 @@
 {
-  "name": "@uniswap/multicall",
-  "version": "1.0.0",
-  "description": "A lib for fetching and caching chain state via the MultiCall contract",
+  "name": "multicall-query",
+  "version": "0.1.0",
+  "description": "A React + Redux lib for fetching and caching chain state via the MultiCall contract",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
     "dist"
   ],
-  "repository": "TODO",
+  "repository": "https://github.com/jmrossy/multicall",
   "keywords": [
     "uniswap",
     "ethereum"
@@ -21,8 +21,7 @@
     "build": "tsdx build",
     "test": "tsdx test",
     "prepublishOnly": "tsdx build",
-    "contracts:compile": "typechain --target ethers-v5 --out-dir src/abi/types './node_modules/@uniswap/v3-periphery/artifacts/contracts/**/*Multicall*.json'",
-    "postinstall": "tsdx build"
+    "contracts:compile": "typechain --target ethers-v5 --out-dir src/abi/types './node_modules/@uniswap/v3-periphery/artifacts/contracts/**/*Multicall*.json'"
   },
   "dependencies": {
     "@uniswap/v3-periphery": "^1.2.1"
