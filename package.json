@@ -1,5 +1,5 @@
 {
-  "name": "multicall-query",
+  "name": "@uniswap/redux-multicall",
   "version": "0.1.0",
   "description": "A React + Redux lib for fetching and caching chain state via the MultiCall contract",
   "main": "dist/index.js",
@@ -7,7 +7,7 @@
   "files": [
     "dist"
   ],
-  "repository": "https://github.com/jmrossy/multicall",
+  "repository": "https://github.com/Uniswap/redux-multicall",
   "keywords": [
     "uniswap",
     "ethereum"
