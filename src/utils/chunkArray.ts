@@ -1,11 +1,11 @@
 // TODO remove the original file in the web interface as multicall is the only consumer
 // https://github.com/Uniswap/interface/blob/main/src/utils/chunkArray.ts
 
-import { CONSERVATIVE_BLOCK_GAS_LIMIT, DEFAULT_GAS_REQUIRED } from '../constants'
+import { DEFAULT_CHUNK_GAS_REQUIRED } from '../constants'
 
 // chunks array into chunks
 // evenly distributes items among the chunks
-export default function chunkArray<T>(items: T[], gasLimit = CONSERVATIVE_BLOCK_GAS_LIMIT * 10): T[][] {
+export default function chunkArray<T>(items: T[], chunkGasLimit: number): T[][] {
   const chunks: T[][] = []
   let currentChunk: T[] = []
   let currentChunkCumulativeGas = 0
@@ -14,11 +14,11 @@ export default function chunkArray<T>(items: T[], gasLimit = CONSERVATIVE_BLOCK_
     const item = items[i]
 
     // calculate the gas required by the current item
-    const gasRequired = (item as { gasRequired?: number })?.gasRequired ?? DEFAULT_GAS_REQUIRED
+    const gasRequired = (item as { gasRequired?: number })?.gasRequired ?? DEFAULT_CHUNK_GAS_REQUIRED
 
     // if the current chunk is empty, or the current item wouldn't push it over the gas limit,
     // append the current item and increment the cumulative gas
-    if (currentChunk.length === 0 || currentChunkCumulativeGas + gasRequired < gasLimit) {
+    if (currentChunk.length === 0 || currentChunkCumulativeGas + gasRequired < chunkGasLimit) {
       currentChunk.push(item)
       currentChunkCumulativeGas += gasRequired
     } else {

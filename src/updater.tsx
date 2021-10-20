@@ -2,10 +2,10 @@ import React, { useEffect, useMemo, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import type { UniswapInterfaceMulticall } from './abi/types'
 import { isDebug } from './config'
-import { DEFAULT_GAS_REQUIRED } from './constants'
+import { CHUNK_GAS_LIMIT, DEFAULT_CALL_GAS_REQUIRED } from './constants'
 import type { MulticallContext } from './context'
 import type { Call, MulticallState, WithMulticallState } from './types'
-import { parseCallKey } from './utils/callKeys'
+import { parseCallKey, toCallKey } from './utils/callKeys'
 import chunkArray from './utils/chunkArray'
 import { retry, RetryableError } from './utils/retry'
 import useDebounce from './utils/useDebounce'
@@ -27,8 +27,9 @@ async function fetchChunk(
       chunk.map(obj => ({
         target: obj.address,
         callData: obj.callData,
-        gasLimit: obj.gasRequired ?? DEFAULT_GAS_REQUIRED
+        gasLimit: obj.gasRequired ?? DEFAULT_CALL_GAS_REQUIRED
       })),
+      // we aren't passing through the block gas limit we used to create the chunk, because it causes a problem with the integ tests
       { blockTag: blockNumber }
     )
 
@@ -37,11 +38,11 @@ async function fetchChunk(
         if (
           !success &&
           returnData.length === 2 &&
-          gasUsed.gte(Math.floor((chunk[i].gasRequired ?? DEFAULT_GAS_REQUIRED) * 0.95))
+          gasUsed.gte(Math.floor((chunk[i].gasRequired ?? DEFAULT_CALL_GAS_REQUIRED) * 0.95))
         ) {
           console.warn(
             `A call failed due to requiring ${gasUsed.toString()} vs. allowed ${chunk[i].gasRequired ??
-              DEFAULT_GAS_REQUIRED}`,
+              DEFAULT_CALL_GAS_REQUIRED}`,
             chunk[i]
           )
         }
@@ -53,6 +54,18 @@ async function fetchChunk(
     const error = e as any
     if (error.code === -32000 || error.message?.indexOf('header not found') !== -1) {
       throw new RetryableError(`header not found for block number ${blockNumber}`)
+    } else if (error.code === -32603 || error.message?.indexOf('execution ran out of gas') !== -1) {
+      if (chunk.length > 1) {
+        if (process.env.NODE_ENV === 'development') {
+          console.debug('Splitting a chunk in 2', chunk)
+        }
+        const half = Math.floor(chunk.length / 2)
+        const [c0, c1] = await Promise.all([
+          fetchChunk(multicall, chunk.slice(0, half), blockNumber),
+          fetchChunk(multicall, chunk.slice(half, chunk.length), blockNumber),
+        ])
+        return c0.concat(c1)
+      }
     }
     console.error('Failed to fetch chunk', error)
     throw error
@@ -158,7 +171,7 @@ function Updater({context, chainId, latestBlockNumber, contract}: UpdaterProps):
     if (outdatedCallKeys.length === 0) return
     const calls = outdatedCallKeys.map(key => parseCallKey(key))
 
-    const chunkedCalls = chunkArray(calls)
+    const chunkedCalls = chunkArray(calls, CHUNK_GAS_LIMIT)
 
     if (cancellations.current && cancellations.current.blockNumber !== latestBlockNumber) {
       cancellations.current.cancellations.forEach(c => c())
@@ -174,7 +187,7 @@ function Updater({context, chainId, latestBlockNumber, contract}: UpdaterProps):
 
     cancellations.current = {
       blockNumber: latestBlockNumber,
-      cancellations: chunkedCalls.map((chunk, index) => {
+      cancellations: chunkedCalls.map((chunk) => {
         const { cancel, promise } = retry(() => fetchChunk(contract, chunk, latestBlockNumber), {
           n: Infinity,
           minWait: 1000,
@@ -182,22 +195,16 @@ function Updater({context, chainId, latestBlockNumber, contract}: UpdaterProps):
         })
         promise
           .then(returnData => {
-            // accumulates the length of all previous indices
-            const firstCallKeyIndex = chunkedCalls.slice(0, index).reduce<number>((memo, curr) => memo + curr.length, 0)
-            const lastCallKeyIndex = firstCallKeyIndex + returnData.length
-
-            const slice = outdatedCallKeys.slice(firstCallKeyIndex, lastCallKeyIndex)
-
-            // split the returned slice into errors and success
-            const { erroredCalls, results } = slice.reduce<{
+            // split the returned slice into errors and results
+            const { erroredCalls, results } = chunk.reduce<{
               erroredCalls: Call[]
               results: { [callKey: string]: string | null }
             }>(
-              (memo, callKey, i) => {
+              (memo, call, i) => {
                 if (returnData[i].success) {
-                  memo.results[callKey] = returnData[i].returnData ?? null
+                  memo.results[toCallKey(call)] = returnData[i].returnData ?? null
                 } else {
-                  memo.erroredCalls.push(parseCallKey(callKey))
+                  memo.erroredCalls.push(call)
                 }
                 return memo
               },
@@ -216,7 +223,15 @@ function Updater({context, chainId, latestBlockNumber, contract}: UpdaterProps):
 
             // dispatch any errored calls
             if (erroredCalls.length > 0) {
-              console.debug('Calls errored in fetch', erroredCalls)
+              if (isDebug) {
+                returnData.forEach((returnData, ix) => {
+                  if (!returnData.success) {
+                    console.debug('Call failed', chunk[ix], returnData)
+                  }
+                })
+              } else {
+                console.debug('Calls errored in fetch', erroredCalls)
+              }
               dispatch(
                 actions.errorFetchingMulticallResults({
                   calls: erroredCalls,
