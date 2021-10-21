@@ -1,6 +1,7 @@
 import { BigNumber, Contract, utils } from 'ethers'
 import { useEffect, useMemo } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import { INVALID_RESULT } from './constants'
 import type { MulticallContext } from './context'
 import type { Call, CallResult, CallState, CallStateResult, ListenerOptions, WithMulticallState } from './types'
 import { parseCallKey, toCallKey } from './utils/callKeys'
@@ -19,13 +20,6 @@ function isValidMethodArgs(x: unknown): x is MethodArgs | undefined {
     x === undefined ||
     (Array.isArray(x) && x.every(xi => isMethodArg(xi) || (Array.isArray(xi) && xi.every(isMethodArg))))
   )
-}
-
-export const INVALID_RESULT: CallResult = { valid: false, blockNumber: undefined, data: undefined }
-
-// use this options object
-export const NEVER_RELOAD: ListenerOptions = {
-  blocksPerFetch: Infinity
 }
 
 // the lowest level call for subscribing to contract data
