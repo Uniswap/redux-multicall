@@ -139,8 +139,8 @@ export function outdatedListeningKeys(
 
 export interface UpdaterProps {
   context: MulticallContext
-  chainId: number // For now, one updater is required for each chainId to be watched
-	latestBlockNumber: number
+  chainId: number | undefined // For now, one updater is required for each chainId to be watched
+  latestBlockNumber: number | undefined
   contract: UniswapInterfaceMulticall
 }
 
