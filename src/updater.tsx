@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import type { UniswapInterfaceMulticall } from './abi/types'
-import { isDebug } from './config'
 import { CHUNK_GAS_LIMIT, DEFAULT_CALL_GAS_REQUIRED } from './constants'
 import type { MulticallContext } from './context'
 import type { Call, MulticallState, WithMulticallState } from './types'
@@ -19,7 +18,8 @@ import useDebounce from './utils/useDebounce'
 async function fetchChunk(
   multicall: UniswapInterfaceMulticall,
   chunk: Call[],
-  blockNumber: number
+  blockNumber: number,
+  isDebug?: boolean
 ): Promise<{ success: boolean; returnData: string }[]> {
   console.debug('Fetching chunk', chunk, blockNumber)
   try {
@@ -142,9 +142,10 @@ export interface UpdaterProps {
   chainId: number | undefined // For now, one updater is required for each chainId to be watched
   latestBlockNumber: number | undefined
   contract: UniswapInterfaceMulticall
+  isDebug?: boolean
 }
 
-function Updater({context, chainId, latestBlockNumber, contract}: UpdaterProps): null {
+function Updater({context, chainId, latestBlockNumber, contract, isDebug}: UpdaterProps): null {
   const {actions, reducerPath} = context
   const dispatch = useDispatch()
   const state = useSelector((state: WithMulticallState) => state[reducerPath])
@@ -188,7 +189,7 @@ function Updater({context, chainId, latestBlockNumber, contract}: UpdaterProps):
     cancellations.current = {
       blockNumber: latestBlockNumber,
       cancellations: chunkedCalls.map((chunk) => {
-        const { cancel, promise } = retry(() => fetchChunk(contract, chunk, latestBlockNumber), {
+        const { cancel, promise } = retry(() => fetchChunk(contract, chunk, latestBlockNumber, isDebug), {
           n: Infinity,
           minWait: 1000,
           maxWait: 2500
