@@ -25,7 +25,7 @@ function isValidMethodArgs(x: unknown): x is MethodArgs | undefined {
 // the lowest level call for subscribing to contract data
 function useCallsData(
   context: MulticallContext,
-  chainId: number| undefined,
+  chainId: number | undefined,
   calls: (Call | undefined)[],
   { blocksPerFetch }: ListenerOptions = { blocksPerFetch: 1 }
 ): CallResult[] {
@@ -130,8 +130,8 @@ function toCallState(
 // formats many calls to a single function on a single contract, with the function name and inputs specified
 export function useSingleContractMultipleData(
   context: MulticallContext,
-  chainId: number| undefined,
-  latestBlockNumber: number| undefined,
+  chainId: number | undefined,
+  latestBlockNumber: number | undefined,
   contract: Contract | null | undefined,
   methodName: string,
   callInputs: OptionalMethodInputs[],
@@ -179,8 +179,8 @@ export function useSingleContractMultipleData(
 
 export function useMultipleContractSingleData(
   context: MulticallContext,
-  chainId: number| undefined,
-  latestBlockNumber: number| undefined,
+  chainId: number | undefined,
+  latestBlockNumber: number | undefined,
   addresses: (string | undefined)[],
   contractInterface: utils.Interface,
   methodName: string,
@@ -240,8 +240,8 @@ export function useSingleCallResult(
 // formats many calls to any number of functions on a single contract, with only the calldata specified
 export function useSingleContractWithCallData(
   context: MulticallContext,
-  chainId: number| undefined,
-  latestBlockNumber: number| undefined,
+  chainId: number | undefined,
+  latestBlockNumber: number | undefined,
   contract: Contract | null | undefined,
   callDatas: string[],
   options: Partial<ListenerOptions> & { gasRequired?: number } = {}
