@@ -17,7 +17,7 @@ export const multicall = createMulticall({ reducerPath: 'multicall' })
 // In your store's root reducer
 export const rootReducer = combineReducers({
   // Other reducers
-  [multicall.reducerPath]: multicall.reducer,
+  [multicall.reducerPath]: multicall.reducer
 })
 ```
 
