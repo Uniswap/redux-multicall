@@ -18,7 +18,7 @@ function isMethodArg(x: unknown): x is MethodArg {
 function isValidMethodArgs(x: unknown): x is MethodArgs | undefined {
   return (
     x === undefined ||
-    (Array.isArray(x) && x.every(xi => isMethodArg(xi) || (Array.isArray(xi) && xi.every(isMethodArg))))
+    (Array.isArray(x) && x.every((xi) => isMethodArg(xi) || (Array.isArray(xi) && xi.every(isMethodArg))))
   )
 }
 
@@ -29,7 +29,7 @@ function useCallsData(
   calls: (Call | undefined)[],
   { blocksPerFetch }: ListenerOptions = { blocksPerFetch: 1 }
 ): CallResult[] {
-  const {reducerPath, actions} = context
+  const { reducerPath, actions } = context
   const callResults = useSelector((state: WithMulticallState) => state[reducerPath].callResults)
   const dispatch = useDispatch()
 
@@ -48,12 +48,12 @@ function useCallsData(
   useEffect(() => {
     const callKeys: string[] = JSON.parse(serializedCallKeys)
     if (!chainId || callKeys.length === 0) return undefined
-    const calls = callKeys.map(key => parseCallKey(key))
+    const calls = callKeys.map((key) => parseCallKey(key))
     dispatch(
       actions.addMulticallListeners({
         chainId,
         calls,
-        options: { blocksPerFetch }
+        options: { blocksPerFetch },
       })
     )
 
@@ -62,7 +62,7 @@ function useCallsData(
         actions.removeMulticallListeners({
           chainId,
           calls,
-          options: { blocksPerFetch }
+          options: { blocksPerFetch },
         })
       )
     }
@@ -70,7 +70,7 @@ function useCallsData(
 
   return useMemo(
     () =>
-      calls.map<CallResult>(call => {
+      calls.map<CallResult>((call) => {
         if (!chainId || !call) return INVALID_RESULT
 
         const result = callResults[chainId]?.[toCallKey(call)]
@@ -84,8 +84,6 @@ function useCallsData(
     [callResults, calls, chainId]
   )
 }
-
-
 
 const INVALID_CALL_STATE: CallState = { valid: false, result: undefined, loading: false, syncing: false, error: false }
 const LOADING_CALL_STATE: CallState = { valid: true, result: undefined, loading: true, syncing: true, error: false }
@@ -114,7 +112,7 @@ function toCallState(
         loading: false,
         error: true,
         syncing,
-        result
+        result,
       }
     }
   }
@@ -123,7 +121,7 @@ function toCallState(
     loading: false,
     syncing,
     result,
-    error: !success
+    error: !success,
   }
 }
 
@@ -143,7 +141,7 @@ export function useSingleContractMultipleData(
   const callDatas = useMemo(
     () =>
       contract && fragment
-        ? callInputs.map<string | undefined>(callInput =>
+        ? callInputs.map<string | undefined>((callInput) =>
             isValidMethodArgs(callInput) ? contract.interface.encodeFunctionData(fragment, callInput) : undefined
           )
         : [],
@@ -157,12 +155,12 @@ export function useSingleContractMultipleData(
   const calls = useMemo(
     () =>
       contract
-        ? callDatas.map<Call | undefined>(callData =>
+        ? callDatas.map<Call | undefined>((callData) =>
             callData
               ? {
                   address: contract.address,
                   callData,
-                  gasRequired
+                  gasRequired,
                 }
               : undefined
           )
@@ -173,7 +171,7 @@ export function useSingleContractMultipleData(
   const results = useCallsData(context, chainId, calls, blocksPerFetch ? { blocksPerFetch } : undefined)
 
   return useMemo(() => {
-    return results.map(result => toCallState(result, contract?.interface, fragment, latestBlockNumber))
+    return results.map((result) => toCallState(result, contract?.interface, fragment, latestBlockNumber))
   }, [results, contract, fragment, latestBlockNumber])
 }
 
@@ -202,12 +200,12 @@ export function useMultipleContractSingleData(
   const calls = useMemo(
     () =>
       callData
-        ? addresses.map<Call | undefined>(address => {
+        ? addresses.map<Call | undefined>((address) => {
             return address
               ? {
                   address,
                   callData,
-                  gasRequired
+                  gasRequired,
                 }
               : undefined
           })
@@ -218,7 +216,7 @@ export function useMultipleContractSingleData(
   const results = useCallsData(context, chainId, calls, blocksPerFetch ? { blocksPerFetch } : undefined)
 
   return useMemo(() => {
-    return results.map(result => toCallState(result, contractInterface, fragment, latestBlockNumber))
+    return results.map((result) => toCallState(result, contractInterface, fragment, latestBlockNumber))
   }, [fragment, results, contractInterface, latestBlockNumber])
 }
 
@@ -253,11 +251,11 @@ export function useSingleContractWithCallData(
   const calls = useMemo(
     () =>
       contract
-        ? callDatas.map<Call>(callData => {
+        ? callDatas.map<Call>((callData) => {
             return {
               address: contract.address,
               callData,
-              gasRequired
+              gasRequired,
             }
           })
         : [],

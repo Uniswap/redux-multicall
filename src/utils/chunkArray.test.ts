@@ -12,7 +12,7 @@ describe('#chunkArray', () => {
   it('size exact half', () => {
     expect(chunkArray([1, 2, 3, 4], DEFAULT_CHUNK_GAS_REQUIRED * 2 + 1)).toEqual([
       [1, 2],
-      [3, 4]
+      [3, 4],
     ])
   })
 })

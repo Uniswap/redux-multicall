@@ -1,7 +1,6 @@
 name: Unit Tests
 
 on:
-  push:
   pull_request:
 
 jobs:
@@ -23,5 +22,11 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
+      - name: Compile contracts
+        run: yarn contracts:compile
+
       - name: Run tests
         run: yarn test
+        
+      - name: Run Build
+        run: yarn build
