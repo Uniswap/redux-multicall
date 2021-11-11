@@ -1,6 +1,3 @@
-// TODO remove the original file in the web interface as multicall is the only consumer
-// https://github.com/Uniswap/interface/blob/main/src/utils/chunkArray.ts
-
 import { DEFAULT_CHUNK_GAS_REQUIRED } from '../constants'
 
 // chunks array into chunks
