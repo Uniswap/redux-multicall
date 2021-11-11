@@ -21,6 +21,16 @@ export const rootReducer = combineReducers({
 })
 ```
 
+To use the updater, you'll need an instance of the Uniswap Multicall2 contract:
+
+```js
+import { abi as MulticallABI } from '@uniswap/v3-periphery/artifacts/contracts/lens/UniswapInterfaceMulticall.sol/UniswapInterfaceMulticall.json'
+import { Contract } from 'ethers'
+import { UniswapInterfaceMulticall } from './abi/types'
+
+const multicall2Contract = new Contract(address, MulticallABI, provider) as UniswapInterfaceMulticall
+```
+
 ## Alpha software
 
 The latest version of the SDK is used in production in the Uniswap Interface,
