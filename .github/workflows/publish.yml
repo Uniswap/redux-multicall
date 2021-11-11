@@ -1,0 +1,38 @@
+name: Publish
+on:
+  # manual trigger
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up node
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Compile contracts
+        run: yarn contracts:compile
+
+      - name: Linters pass
+        run: yarn lint
+
+      - name: Tests pass
+        run: yarn test
+        
+      - name: Build source
+        run: yarn build
+
+      - name: Publish to NPM
+        uses: JS-DevTools/npm-publish@v1
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
