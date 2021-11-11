@@ -261,7 +261,7 @@ function Updater({ context, chainId, latestBlockNumber, contract, isDebug }: Upd
         return cancel
       }),
     }
-  }, [chainId, contract, dispatch, serializedOutdatedCallKeys, latestBlockNumber])
+  }, [actions, chainId, contract, dispatch, serializedOutdatedCallKeys, latestBlockNumber, isDebug])
 
   return null
 }
