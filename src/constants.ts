@@ -8,5 +8,5 @@ export const CONSERVATIVE_BLOCK_GAS_LIMIT = 10_000_000 // conservative, hard-cod
 // Consts for hooks
 export const INVALID_RESULT: CallResult = { valid: false, blockNumber: undefined, data: undefined }
 export const NEVER_RELOAD: ListenerOptions = {
-  blocksPerFetch: Infinity
+  blocksPerFetch: Infinity,
 }

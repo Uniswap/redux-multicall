@@ -24,10 +24,10 @@ async function fetchChunk(
   console.debug('Fetching chunk', chunk, blockNumber)
   try {
     const { returnData } = await multicall.callStatic.multicall(
-      chunk.map(obj => ({
+      chunk.map((obj) => ({
         target: obj.address,
         callData: obj.callData,
-        gasLimit: obj.gasRequired ?? DEFAULT_CALL_GAS_REQUIRED
+        gasLimit: obj.gasRequired ?? DEFAULT_CALL_GAS_REQUIRED,
       })),
       // we aren't passing through the block gas limit we used to create the chunk, because it causes a problem with the integ tests
       { blockTag: blockNumber }
@@ -41,8 +41,9 @@ async function fetchChunk(
           gasUsed.gte(Math.floor((chunk[i].gasRequired ?? DEFAULT_CALL_GAS_REQUIRED) * 0.95))
         ) {
           console.warn(
-            `A call failed due to requiring ${gasUsed.toString()} vs. allowed ${chunk[i].gasRequired ??
-              DEFAULT_CALL_GAS_REQUIRED}`,
+            `A call failed due to requiring ${gasUsed.toString()} vs. allowed ${
+              chunk[i].gasRequired ?? DEFAULT_CALL_GAS_REQUIRED
+            }`,
             chunk[i]
           )
         }
@@ -90,7 +91,7 @@ export function activeListeningKeys(
     const keyListeners = listeners[callKey]
 
     memo[callKey] = Object.keys(keyListeners)
-      .filter(key => {
+      .filter((key) => {
         const blocksPerFetch = parseInt(key)
         if (blocksPerFetch <= 0) return false
         return keyListeners[blocksPerFetch] > 0
@@ -120,7 +121,7 @@ export function outdatedListeningKeys(
   // no results at all, load everything
   if (!results) return Object.keys(listeningKeys)
 
-  return Object.keys(listeningKeys).filter(callKey => {
+  return Object.keys(listeningKeys).filter((callKey) => {
     const blocksPerFetch = listeningKeys[callKey]
 
     const data = callResults[chainId][callKey]
@@ -145,8 +146,8 @@ export interface UpdaterProps {
   isDebug?: boolean
 }
 
-function Updater({context, chainId, latestBlockNumber, contract, isDebug}: UpdaterProps): null {
-  const {actions, reducerPath} = context
+function Updater({ context, chainId, latestBlockNumber, contract, isDebug }: UpdaterProps): null {
+  const { actions, reducerPath } = context
   const dispatch = useDispatch()
   const state = useSelector((state: WithMulticallState) => state[reducerPath])
   // wait for listeners to settle before triggering updates
@@ -161,28 +162,29 @@ function Updater({context, chainId, latestBlockNumber, contract, isDebug}: Updat
     return outdatedListeningKeys(state.callResults, listeningKeys, chainId, latestBlockNumber)
   }, [chainId, state.callResults, listeningKeys, latestBlockNumber])
 
-  const serializedOutdatedCallKeys = useMemo(() => JSON.stringify(unserializedOutdatedCallKeys.sort()), [
-    unserializedOutdatedCallKeys
-  ])
+  const serializedOutdatedCallKeys = useMemo(
+    () => JSON.stringify(unserializedOutdatedCallKeys.sort()),
+    [unserializedOutdatedCallKeys]
+  )
 
   useEffect(() => {
     if (!latestBlockNumber || !chainId || !contract) return
 
     const outdatedCallKeys: string[] = JSON.parse(serializedOutdatedCallKeys)
     if (outdatedCallKeys.length === 0) return
-    const calls = outdatedCallKeys.map(key => parseCallKey(key))
+    const calls = outdatedCallKeys.map((key) => parseCallKey(key))
 
     const chunkedCalls = chunkArray(calls, CHUNK_GAS_LIMIT)
 
     if (cancellations.current && cancellations.current.blockNumber !== latestBlockNumber) {
-      cancellations.current.cancellations.forEach(c => c())
+      cancellations.current.cancellations.forEach((c) => c())
     }
 
     dispatch(
       actions.fetchingMulticallResults({
         calls,
         chainId,
-        fetchingBlockNumber: latestBlockNumber
+        fetchingBlockNumber: latestBlockNumber,
       })
     )
 
@@ -192,10 +194,10 @@ function Updater({context, chainId, latestBlockNumber, contract, isDebug}: Updat
         const { cancel, promise } = retry(() => fetchChunk(contract, chunk, latestBlockNumber, isDebug), {
           n: Infinity,
           minWait: 1000,
-          maxWait: 2500
+          maxWait: 2500,
         })
         promise
-          .then(returnData => {
+          .then((returnData) => {
             // split the returned slice into errors and results
             const { erroredCalls, results } = chunk.reduce<{
               erroredCalls: Call[]
@@ -218,7 +220,7 @@ function Updater({context, chainId, latestBlockNumber, contract, isDebug}: Updat
                 actions.updateMulticallResults({
                   chainId,
                   results,
-                  blockNumber: latestBlockNumber
+                  blockNumber: latestBlockNumber,
                 })
               )
 
@@ -237,7 +239,7 @@ function Updater({context, chainId, latestBlockNumber, contract, isDebug}: Updat
                 actions.errorFetchingMulticallResults({
                   calls: erroredCalls,
                   chainId,
-                  fetchingBlockNumber: latestBlockNumber
+                  fetchingBlockNumber: latestBlockNumber,
                 })
               )
             }
@@ -252,12 +254,12 @@ function Updater({context, chainId, latestBlockNumber, contract, isDebug}: Updat
               actions.errorFetchingMulticallResults({
                 calls: chunk,
                 chainId,
-                fetchingBlockNumber: latestBlockNumber
+                fetchingBlockNumber: latestBlockNumber,
               })
             )
           })
         return cancel
-      })
+      }),
     }
   }, [chainId, contract, dispatch, serializedOutdatedCallKeys, latestBlockNumber])
 
@@ -266,7 +268,7 @@ function Updater({context, chainId, latestBlockNumber, contract, isDebug}: Updat
 
 export function createUpdater(context: MulticallContext) {
   const UpdaterContextBound = (props: Omit<UpdaterProps, 'context'>) => {
-    return (<Updater context={context} {...props}/>)
+    return <Updater context={context} {...props} />
   }
   return UpdaterContextBound
 }
