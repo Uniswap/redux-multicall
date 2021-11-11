@@ -20,6 +20,7 @@
   "scripts": {
     "build": "tsdx build",
     "test": "tsdx test",
+    "lint": "tsdx lint",
     "prepublishOnly": "tsdx build",
     "contracts:compile": "typechain --target ethers-v5 --out-dir src/abi/types './node_modules/@uniswap/v3-periphery/artifacts/contracts/**/*Multicall*.json'"
   },
@@ -31,6 +32,7 @@
     "@typechain/ethers-v5": "^7.2.0",
     "@types/jest": "^24.0.25",
     "@types/react": "^17.0.28",
+    "eslint-plugin-prettier": "3.4.1",
     "ethers": "^5.4.7",
     "prettier": "^2.4.1",
     "react": "^17.0.2",
@@ -52,5 +54,10 @@
     "printWidth": 120,
     "semi": false,
     "singleQuote": true
+  },
+  "eslintConfig": {
+    "rules": {
+      "no-useless-computed-key": "off"
+    }
   }
 }

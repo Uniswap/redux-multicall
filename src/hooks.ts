@@ -66,7 +66,7 @@ function useCallsData(
         })
       )
     }
-  }, [chainId, dispatch, blocksPerFetch, serializedCallKeys])
+  }, [actions, chainId, dispatch, blocksPerFetch, serializedCallKeys])
 
   return useMemo(
     () =>
