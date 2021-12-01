@@ -3,7 +3,7 @@ import { Provider } from 'react-redux'
 import { Home } from './Home'
 import { useLatestBlock } from './hooks'
 import { store } from './store'
-import { Updater } from './updater'
+import { Updater } from './Updater'
 
 export function App() {
   const blockNumber = useLatestBlock()
