@@ -24,14 +24,14 @@ describe('Use multicall in test application', () => {
   it('Performs a single contract multicall query', async () => {
     render(<App />)
     // Check that block timestamp is correctly retrieved from block
-    const timestamp1 = await waitFor(() => screen.getByTestId('blockTimestamp'), { timeout: 15_000 /* 15 seconds */ })
+    const timestamp1 = await waitFor(() => screen.getByTestId('blockTimestamp'), { timeout: 20_000 /* 20 seconds */ })
     expect(timestamp1 && timestamp1?.textContent).toBeTruthy()
     const value1 = parseInt(timestamp1.textContent!, 10) * 1000
     const now1 = Date.now()
     expect(now1 - value1).toBeLessThan(MAX_BLOCK_AGE)
 
     // Wait for an updated block timestamp
-    await sleep(10_000 /* 10 seconds */)
+    await sleep(20_000 /* 20 seconds */)
 
     // Check that the block timestamp has updated correctly
     const timestamp2 = await waitFor(() => screen.getByTestId('blockTimestamp'), { timeout: 1_000 /* 1 second */ })
@@ -39,16 +39,16 @@ describe('Use multicall in test application', () => {
     const value2 = parseInt(timestamp1.textContent!, 10) * 1000
     const now2 = Date.now()
     expect(now2 - value2).toBeLessThan(MAX_BLOCK_AGE)
-  }, 30_000 /* 30 seconds */)
+  }, 50_000 /* 50 seconds */)
 
   it('Performs a multi contract multicall query', async () => {
     render(<App />)
     // Check that max token balance is correctly retrieved
-    const balance = await waitFor(() => screen.getByTestId('maxTokenBalance'), { timeout: 15_000 /* 15 seconds */ })
+    const balance = await waitFor(() => screen.getByTestId('maxTokenBalance'), { timeout: 20_000 /* 30 seconds */ })
     expect(balance && balance?.textContent).toBeTruthy()
     const value1 = BigNumber.from(balance.textContent)
     expect(value1.gt(0)).toBeTruthy()
-  }, 20_000 /* 20 seconds */)
+  }, 25_000 /* 20 seconds */)
 })
 
 function sleep(milliseconds: number) {

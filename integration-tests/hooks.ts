@@ -1,7 +1,7 @@
 import { abi as MulticallABI } from '@uniswap/v3-periphery/artifacts/contracts/lens/UniswapInterfaceMulticall.sol/UniswapInterfaceMulticall.json'
 import { BigNumber, Contract, providers, utils } from 'ethers'
 import { useEffect, useMemo, useState } from 'react'
-import { UniswapInterfaceMulticall } from '../abi/types'
+import { UniswapInterfaceMulticall } from '../src/abi/types'
 import ERC20_ABI from './erc20.json'
 import { useMultipleContractSingleData, useSingleCallResult } from './multicall'
 
