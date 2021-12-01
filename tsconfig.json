@@ -1,5 +1,5 @@
 {
-  "include": ["src"],
+  "include": ["src", "integration-tests"],
   "compilerOptions": {
     "alwaysStrict": true,
     "declaration": true,

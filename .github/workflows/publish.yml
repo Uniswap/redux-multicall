@@ -28,6 +28,8 @@ jobs:
 
       - name: Tests pass
         run: yarn test
+        env:
+          INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
         
       - name: Build source
         run: yarn build

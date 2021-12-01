@@ -31,6 +31,8 @@ import { UniswapInterfaceMulticall } from './abi/types'
 const multicall2Contract = new Contract(address, MulticallABI, provider) as UniswapInterfaceMulticall
 ```
 
+For a more detailed example, see basic example app in `./integration-tests`
+
 ## Alpha software
 
 The latest version of the SDK is used in production in the Uniswap Interface,
