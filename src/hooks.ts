@@ -306,7 +306,7 @@ export function useMultiChainMultiContractSingleData(
 // this is for querying a contract on multiple chains
 export function useMultiChainSingleContractSingleData(
   context: MulticallContext,
-  chainToBlockNumber: Record<number, number>,
+  chainToBlockNumber: Record<number, number | undefined>,
   chainToAddress: Record<number, string | undefined>,
   contractInterface: utils.Interface,
   methodName: string,
@@ -335,7 +335,7 @@ export function useMultiChainSingleContractSingleData(
 
   return useMemo(() => {
     return getChainIds(chainToAddress).reduce((result, chainId) => {
-      result[chainId] = multiContractResults[chainId][0] ?? INVALID_CALL_STATE
+      result[chainId] = multiContractResults[chainId]?.[0] ?? INVALID_CALL_STATE
       return result
     }, {} as Record<number, CallState>)
   }, [chainToAddress, multiContractResults])
@@ -360,5 +360,5 @@ function useCallData(
 }
 
 function getChainIds(chainIdMap: Record<number, any>) {
-  return Object.keys(chainIdMap).map(parseInt)
+  return Object.keys(chainIdMap).map((c) => parseInt(c, 10))
 }
