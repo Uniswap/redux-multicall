@@ -19,7 +19,7 @@
   },
   "scripts": {
     "build": "tsdx build",
-    "test": "tsdx test",
+    "test": "tsdx test --runInBand",
     "lint": "tsdx lint",
     "prepublishOnly": "tsdx build",
     "contracts:compile": "typechain --target ethers-v5 --out-dir src/abi/types './node_modules/@uniswap/v3-periphery/artifacts/contracts/**/*Multicall*.json'"
