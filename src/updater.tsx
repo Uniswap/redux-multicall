@@ -6,7 +6,7 @@ import type { MulticallContext } from './context'
 import type { MulticallActions } from './slice'
 import type { Call, MulticallState, WithMulticallState } from './types'
 import { parseCallKey, toCallKey } from './utils/callKeys'
-import chunkArray from './utils/chunkArray'
+import chunkCalls from './utils/chunkCalls'
 import { retry, RetryableError } from './utils/retry'
 import useDebounce from './utils/useDebounce'
 
@@ -257,7 +257,7 @@ function Updater(props: UpdaterProps): null {
     if (outdatedCallKeys.length === 0) return
     const calls = outdatedCallKeys.map((key) => parseCallKey(key))
 
-    const chunkedCalls = chunkArray(calls, CHUNK_GAS_LIMIT)
+    const chunkedCalls = chunkCalls(calls, CHUNK_GAS_LIMIT)
 
     if (cancellations.current && cancellations.current.blockNumber !== latestBlockNumber) {
       cancellations.current.cancellations.forEach((c) => c())
