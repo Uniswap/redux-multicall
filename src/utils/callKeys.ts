@@ -22,3 +22,17 @@ export function parseCallKey(callKey: string): Call {
     ...(pcs[2] ? { gasRequired: Number.parseInt(pcs[2]) } : {}),
   }
 }
+
+export function callsToCallKeys(calls?: Array<Call | undefined>) {
+  return (
+    calls
+      ?.filter((c): c is Call => Boolean(c))
+      ?.map(toCallKey)
+      ?.sort() ?? []
+  )
+}
+
+export function callKeysToCalls(callKeys: string[]) {
+  if (!callKeys?.length) return null
+  return callKeys.map((key) => parseCallKey(key))
+}

@@ -58,6 +58,10 @@ export interface ListenerOptions {
   readonly blocksPerFetch: number
 }
 
+export interface ListenerOptionsWithGas extends ListenerOptions {
+  readonly gasRequired?: number
+}
+
 export interface MulticallListenerPayload {
   chainId: number
   calls: Call[]

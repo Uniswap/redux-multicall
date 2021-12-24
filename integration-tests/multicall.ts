@@ -7,4 +7,6 @@ export const {
   useSingleCallResult,
   useSingleContractMultipleData,
   useSingleContractWithCallData,
+  useMultiChainMultiContractSingleData,
+  useMultiChainSingleContractSingleData,
 } = multicall.hooks
