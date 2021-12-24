@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { BigNumber } from 'ethers'
 import React from 'react'
 import { App } from './App'
+import { sleep } from './utils'
 
 const MAX_BLOCK_AGE = 600_000 // 10 minutes
 
@@ -15,7 +16,7 @@ describe('Use multicall in test application', () => {
 
   it('Renders correctly initially', () => {
     render(<App />)
-    const h1 = screen.getByText('Hello Multicall') // H1 in Home.tsx
+    const h1 = screen.getByText('Hello Multicall') // H1 in Home
     expect(h1).toBeTruthy()
     const missing = screen.queryByText('Does Not Exist')
     expect(missing).toBeFalsy()
@@ -44,13 +45,9 @@ describe('Use multicall in test application', () => {
   it('Performs a multi contract multicall query', async () => {
     render(<App />)
     // Check that max token balance is correctly retrieved
-    const balance = await waitFor(() => screen.getByTestId('maxTokenBalance'), { timeout: 20_000 /* 30 seconds */ })
+    const balance = await waitFor(() => screen.getByTestId('maxTokenBalance'), { timeout: 20_000 /* 20 seconds */ })
     expect(balance && balance?.textContent).toBeTruthy()
     const value1 = BigNumber.from(balance.textContent)
     expect(value1.gt(0)).toBeTruthy()
-  }, 25_000 /* 20 seconds */)
+  }, 25_000 /* 25 seconds */)
 })
-
-function sleep(milliseconds: number) {
-  return new Promise((resolve) => setTimeout(() => resolve(true), milliseconds))
-}

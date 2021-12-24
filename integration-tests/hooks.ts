@@ -2,50 +2,73 @@ import { abi as MulticallABI } from '@uniswap/v3-periphery/artifacts/contracts/l
 import { BigNumber, Contract, providers, utils } from 'ethers'
 import { useEffect, useMemo, useState } from 'react'
 import { UniswapInterfaceMulticall } from '../src/abi/types'
+import { ChainId, MULTICALL_ADDRESS, NULL_ADDRESS, USDC_ADDRESS, USDT_ADDRESS } from './consts'
 import ERC20_ABI from './erc20.json'
-import { useMultipleContractSingleData, useSingleCallResult } from './multicall'
+import { useMultiChainSingleContractSingleData, useMultipleContractSingleData, useSingleCallResult } from './multicall'
 
-export const NULL_ADDRESS = '0x0000000000000000000000000000000000000000'
-export const MULTICALL_ADDRESS = '0x1F98415757620B543A52E61c46B32eB19261F984' // Address on Mainnet
-export const USDC_ADDRESS = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
-export const USDT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
+const providerCache: Partial<Record<ChainId, providers.JsonRpcProvider>> = {}
+const MulticallInterface = new utils.Interface(MulticallABI)
+const ERC20Interface = new utils.Interface(ERC20_ABI)
 
-let provider: providers.JsonRpcProvider
-
-export function useContract() {
+export function useContract(chainId: ChainId) {
   return useMemo(() => {
-    return new Contract(MULTICALL_ADDRESS, MulticallABI, getProvider()) as UniswapInterfaceMulticall
+    return new Contract(MULTICALL_ADDRESS, MulticallABI, getProvider(chainId)) as UniswapInterfaceMulticall
   }, [])
 }
 
-export function useLatestBlock() {
+export function useLatestBlock(provider: providers.JsonRpcProvider) {
   const [blockNumber, setBlockNumber] = useState<number | undefined>(undefined)
   useEffect(() => {
+    if (!provider) return
     const onBlock = (num: number) => setBlockNumber(num)
     provider.on('block', onBlock)
     return () => {
       provider.off('block', onBlock)
     }
-  }, [setBlockNumber])
+  }, [provider, setBlockNumber])
   return blockNumber
 }
 
-export function useCurrentBlockTimestamp(blockNumber: number | undefined): string | undefined {
-  const contract = useContract()
-  const result = useSingleCallResult(1, blockNumber, contract, 'getCurrentBlockTimestamp')
-  return result.result?.[0]?.toString()
+export function useCurrentBlockTimestamp(chainId: ChainId, blockNumber: number | undefined): string | undefined {
+  const contract = useContract(chainId)
+  const callState = useSingleCallResult(chainId, blockNumber, contract, 'getCurrentBlockTimestamp')
+  return callState.result?.[0]?.toString()
 }
 
-export function useMaxTokenBalance(blockNumber: number | undefined): string | undefined {
-  const ERC20Interface = new utils.Interface(ERC20_ABI)
-  const results = useMultipleContractSingleData(
-    1,
-    blockNumber,
-    [USDC_ADDRESS, USDT_ADDRESS],
-    ERC20Interface,
-    'balanceOf',
-    [NULL_ADDRESS]
+export function useCurrentBlockTimestampMultichain(
+  chainIds: ChainId[],
+  blockNumbers: Array<number | undefined>
+): Array<string | undefined> {
+  const chainToBlock = useMemo(() => {
+    return chainIds.reduce((result, chainId, i) => {
+      result[chainId] = blockNumbers[i]
+      return result
+    }, {} as Record<number, number | undefined>)
+  }, [chainIds, blockNumbers])
+
+  const chainToAddress = useMemo(() => {
+    return chainIds.reduce((result, chainId) => {
+      result[chainId] = MULTICALL_ADDRESS
+      return result
+    }, {} as Record<number, string>)
+  }, [])
+
+  const chainToCallState = useMultiChainSingleContractSingleData(
+    chainToBlock,
+    chainToAddress,
+    MulticallInterface,
+    'getCurrentBlockTimestamp'
   )
+
+  return Object.values(chainToCallState).map((callState) => callState.result?.[0]?.toString())
+}
+
+export function useMaxTokenBalance(chainId: ChainId, blockNumber: number | undefined): string | undefined {
+  const { contracts, accounts } = useMemo(
+    () => ({ contracts: [USDC_ADDRESS, USDT_ADDRESS], accounts: [NULL_ADDRESS] }),
+    []
+  )
+  const results = useMultipleContractSingleData(chainId, blockNumber, contracts, ERC20Interface, 'balanceOf', accounts)
   let max
   for (const result of results) {
     if (!result.valid || !result.result?.length) continue
@@ -55,11 +78,28 @@ export function useMaxTokenBalance(blockNumber: number | undefined): string | un
   return max?.toString()
 }
 
-function getProvider() {
-  if (provider) return provider
+export function getProvider(chainId: ChainId) {
+  if (providerCache[chainId]) return providerCache[chainId]!
   const infuraKey = process.env.INFURA_PROJECT_ID
   if (!infuraKey) throw new Error('INFURA_PROJECT_ID is required for provider')
-  // Connect to mainnet
-  provider = new providers.InfuraProvider('homestead', infuraKey)
-  return provider
+  const name = getInfuraChainName(chainId)
+  providerCache[chainId] = new providers.InfuraProvider(name, infuraKey)
+  return providerCache[chainId]!
+}
+
+export function getInfuraChainName(chainId: ChainId) {
+  switch (chainId) {
+    case ChainId.MAINNET:
+      return 'homestead'
+    case ChainId.RINKEBY:
+      return 'rinkeby'
+    case ChainId.ROPSTEN:
+      return 'ropsten'
+    case ChainId.GOERLI:
+      return 'goerli'
+    case ChainId.KOVAN:
+      return 'kovan'
+    default:
+      throw new Error(`Unsupported eth infura chainId for ${chainId}`)
+  }
 }

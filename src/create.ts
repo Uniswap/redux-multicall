@@ -1,5 +1,7 @@
 import type { MulticallContext } from './context'
 import {
+  useMultiChainMultiContractSingleData as _useMultiChainMultiContractSingleData,
+  useMultiChainSingleContractSingleData as _useMultiChainSingleContractSingleData,
   useMultipleContractSingleData as _useMultipleContractSingleData,
   useSingleCallResult as _useSingleCallResult,
   useSingleContractMultipleData as _useSingleContractMultipleData,
@@ -35,11 +37,19 @@ export function createMulticall(options?: MulticallOptions) {
     _useSingleContractWithCallData(context, ...args)
   const useSingleCallResult = (...args: ParamsWithoutContext<typeof _useSingleCallResult>) =>
     _useSingleCallResult(context, ...args)
+  const useMultiChainMultiContractSingleData = (
+    ...args: ParamsWithoutContext<typeof _useMultiChainMultiContractSingleData>
+  ) => _useMultiChainMultiContractSingleData(context, ...args)
+  const useMultiChainSingleContractSingleData = (
+    ...args: ParamsWithoutContext<typeof _useMultiChainSingleContractSingleData>
+  ) => _useMultiChainSingleContractSingleData(context, ...args)
   const hooks = {
     useMultipleContractSingleData,
     useSingleContractMultipleData,
     useSingleContractWithCallData,
     useSingleCallResult,
+    useMultiChainMultiContractSingleData,
+    useMultiChainSingleContractSingleData,
   }
 
   const Updater = createUpdater(context)
