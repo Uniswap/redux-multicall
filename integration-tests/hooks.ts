@@ -1,6 +1,6 @@
 import { abi as MulticallABI } from '@uniswap/v3-periphery/artifacts/contracts/lens/UniswapInterfaceMulticall.sol/UniswapInterfaceMulticall.json'
 import { BigNumber } from '@ethersproject/bignumber'
-import { Contract} from '@ethersproject/contracts'
+import { Contract } from '@ethersproject/contracts'
 import { InfuraProvider, JsonRpcProvider } from '@ethersproject/providers'
 import { Interface } from '@ethersproject/abi'
 import { useEffect, useMemo, useState } from 'react'
