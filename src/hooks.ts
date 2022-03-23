@@ -1,4 +1,5 @@
-import { Contract, utils } from 'ethers'
+import { Contract } from '@ethersproject/contracts'
+import { Interface } from '@ethersproject/abi'
 import { useEffect, useMemo } from 'react'
 import { batch, useDispatch, useSelector } from 'react-redux'
 import { INVALID_CALL_STATE, INVALID_RESULT } from './constants'
@@ -181,7 +182,7 @@ export function useMultipleContractSingleData(
   chainId: number | undefined,
   latestBlockNumber: number | undefined,
   addresses: (string | undefined)[],
-  contractInterface: utils.Interface,
+  contractInterface: Interface,
   methodName: string,
   callInputs?: OptionalMethodInputs,
   options?: Partial<ListenerOptionsWithGas>
@@ -264,7 +265,7 @@ export function useMultiChainMultiContractSingleData(
   context: MulticallContext,
   chainToBlockNumber: Record<number, number | undefined>,
   chainToAddresses: Record<number, Array<string | undefined>>,
-  contractInterface: utils.Interface,
+  contractInterface: Interface,
   methodName: string,
   callInputs?: OptionalMethodInputs,
   options?: Partial<ListenerOptionsWithGas>
@@ -308,7 +309,7 @@ export function useMultiChainSingleContractSingleData(
   context: MulticallContext,
   chainToBlockNumber: Record<number, number | undefined>,
   chainToAddress: Record<number, string | undefined>,
-  contractInterface: utils.Interface,
+  contractInterface: Interface,
   methodName: string,
   callInputs?: OptionalMethodInputs,
   options?: Partial<ListenerOptionsWithGas>
@@ -343,7 +344,7 @@ export function useMultiChainSingleContractSingleData(
 
 function useCallData(
   methodName: string,
-  contractInterface: utils.Interface | null | undefined,
+  contractInterface: Interface | null | undefined,
   callInputs: OptionalMethodInputs | undefined
 ) {
   // Create ethers function fragment
