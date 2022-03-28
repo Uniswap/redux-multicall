@@ -89,7 +89,7 @@ export function getProvider(chainId: ChainId) {
   if (!projectId) throw new Error('INFURA_PROJECT_ID is required for provider')
   const projectSecret = process.env.INFURA_PROJECT_SECRET
   const project = projectSecret ? { projectId, projectSecret } : projectId
-  providerCache[chainId] = new providers.InfuraProvider(name, project)
+  providerCache[chainId] = new InfuraProvider(name, project)
   providerCache[chainId]?.once('error', (e) => {
     throw e
   })
