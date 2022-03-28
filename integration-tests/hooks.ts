@@ -1,3 +1,4 @@
+import { act } from '@testing-library/react'
 import { abi as MulticallABI } from '@uniswap/v3-periphery/artifacts/contracts/lens/UniswapInterfaceMulticall.sol/UniswapInterfaceMulticall.json'
 import { BigNumber } from '@ethersproject/bignumber'
 import { Contract } from '@ethersproject/contracts'
@@ -23,7 +24,7 @@ export function useLatestBlock(provider: JsonRpcProvider) {
   const [blockNumber, setBlockNumber] = useState<number | undefined>(undefined)
   useEffect(() => {
     if (!provider) return
-    const onBlock = (num: number) => setBlockNumber(num)
+    const onBlock = (num: number) => act(() => setBlockNumber(num))
     provider.on('block', onBlock)
     return () => {
       provider.off('block', onBlock)
@@ -83,10 +84,15 @@ export function useMaxTokenBalance(chainId: ChainId, blockNumber: number | undef
 
 export function getProvider(chainId: ChainId) {
   if (providerCache[chainId]) return providerCache[chainId]!
-  const infuraKey = process.env.INFURA_PROJECT_ID
-  if (!infuraKey) throw new Error('INFURA_PROJECT_ID is required for provider')
   const name = getInfuraChainName(chainId)
-  providerCache[chainId] = new InfuraProvider(name, infuraKey)
+  const projectId = process.env.INFURA_PROJECT_ID
+  if (!projectId) throw new Error('INFURA_PROJECT_ID is required for provider')
+  const projectSecret = process.env.INFURA_PROJECT_SECRET
+  const project = projectSecret ? { projectId, projectSecret } : projectId
+  providerCache[chainId] = new providers.InfuraProvider(name, project)
+  providerCache[chainId]?.once('error', (e) => {
+    throw e
+  })
   return providerCache[chainId]!
 }
 
