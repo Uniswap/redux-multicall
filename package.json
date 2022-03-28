@@ -1,6 +1,6 @@
 {
   "name": "@uniswap/redux-multicall",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A React + Redux lib for fetching and caching chain state via the MultiCall contract",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -24,8 +24,11 @@
     "prepublishOnly": "tsdx build",
     "contracts:compile": "typechain --target ethers-v5 --out-dir src/abi/types './node_modules/@uniswap/v3-periphery/artifacts/contracts/**/*Multicall*.json'"
   },
-  "dependencies": {},
   "devDependencies": {
+    "@ethersproject/abi": "5",
+    "@ethersproject/bignumber": "5",
+    "@ethersproject/contracts": "5",
+    "@ethersproject/providers": "5",
     "@reduxjs/toolkit": "^1.6.2",
     "@testing-library/jest-dom": "^5.15.1",
     "@testing-library/react": "^12.1.2",
@@ -43,10 +46,12 @@
     "typechain": "^5.2.0"
   },
   "peerDependencies": {
-    "@reduxjs/toolkit": "1.x",
-    "ethers": "5.x",
-    "react": "^17.x",
-    "react-redux": "^7.x"
+    "@ethersproject/abi": "5",
+    "@ethersproject/bignumber": "5",
+    "@ethersproject/contracts": "5",
+    "@reduxjs/toolkit": "1",
+    "react": "17",
+    "react-redux": "7"
   },
   "engines": {
     "node": ">=10"
