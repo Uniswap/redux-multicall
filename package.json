@@ -49,9 +49,9 @@
     "@ethersproject/abi": "5",
     "@ethersproject/bignumber": "5",
     "@ethersproject/contracts": "5",
-    "@reduxjs/toolkit": "1.x",
-    "react": "^17",
-    "react-redux": "^7"
+    "@reduxjs/toolkit": "1",
+    "react": "17",
+    "react-redux": "7"
   },
   "engines": {
     "node": ">=10"
