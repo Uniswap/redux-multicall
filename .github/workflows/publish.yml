@@ -30,6 +30,7 @@ jobs:
         run: yarn test
         env:
           INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
+          INFURA_PROJECT_SECRET: ${{ secrets.INFURA_PROJECT_SECRET }}
         
       - name: Build source
         run: yarn build
