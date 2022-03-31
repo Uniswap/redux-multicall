@@ -1,6 +1,6 @@
 import { Contract } from '@ethersproject/contracts'
 import { Interface } from '@ethersproject/abi'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { batch, useDispatch, useSelector } from 'react-redux'
 import { INVALID_CALL_STATE, INVALID_RESULT } from './constants'
 import type { MulticallContext } from './context'
@@ -48,16 +48,43 @@ export function useCallsDataSubscription(
     }
   }, [actions, chainId, dispatch, blocksPerFetch, serializedCallKeys])
 
-  return useMemo(
-    () =>
-      calls.map<CallResult>((call) => {
-        if (!chainId || !call) return INVALID_RESULT
-        const result = callResults[chainId]?.[toCallKey(call)]
-        const data = result?.data && result.data !== '0x' ? result.data : undefined
-        return { valid: true, data, blockNumber: result?.blockNumber }
-      }),
-    [callResults, calls, chainId]
+  // ensures that call results arrays remain referentially equivalent when unchanged to prevent
+  // spurious re-renders, which would otherwise occur because mapping always creates a new object
+  return useStabilizeCallResults(
+    useMemo(
+      () =>
+        calls.map<CallResult>((call) => {
+          if (!chainId || !call) return INVALID_RESULT
+          const result = callResults[chainId]?.[toCallKey(call)]
+          const data = result?.data && result.data !== '0x' ? result.data : undefined
+          return { valid: true, data, blockNumber: result?.blockNumber }
+        }),
+      [callResults, calls, chainId]
+    )
   )
+}
+
+function useStabilizeCallResults(results: CallResult[]): CallResult[] {
+  const [stableResults, setStableResults] = useState(results)
+  useEffect(() => {
+    setStableResults((stableResults) => {
+      if (
+        results.length === stableResults.length &&
+        results.every((result, i) => {
+          const stableResult = stableResults[i]
+          return (
+            result.valid === stableResult.valid &&
+            result.blockNumber === stableResult.blockNumber &&
+            result.data === stableResult.data
+          )
+        })
+      ) {
+        return stableResults
+      }
+      return results
+    })
+  }, [results])
+  return stableResults
 }
 
 // Similar to useCallsDataSubscription above but for subscribing to
