@@ -12,7 +12,7 @@ import { isValidMethodArgs, MethodArg } from './validation'
 type OptionalMethodInputs = Array<MethodArg | MethodArg[] | undefined> | undefined
 
 // the lowest level call for subscribing to contract data
-function useCallsDataSubscription(
+export function useCallsDataSubscription(
   context: MulticallContext,
   chainId: number | undefined,
   calls: Array<Call | undefined>,
