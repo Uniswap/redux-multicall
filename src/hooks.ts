@@ -62,7 +62,7 @@ export function useCallsDataSubscription(
     // ensure that call results arrays remain referentially equivalent when unchanged to prevent
     // spurious re-renders, which would otherwise occur because mapping always creates a new object
     // eslint-disable-next-line
-    [...results]
+    results
   )
 }
 
