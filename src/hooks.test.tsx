@@ -1,25 +1,27 @@
 import '@testing-library/jest-dom'
 import { combineReducers, configureStore, Store } from '@reduxjs/toolkit'
-import React, { useEffect, useState } from 'react'
+import React, { useMemo, useRef } from 'react'
 import { render, unmountComponentAtNode } from 'react-dom'
-import { act } from 'react-dom/test-utils'
 import { Provider } from 'react-redux'
 
 import { useCallsDataSubscription } from './hooks'
 import { createMulticallSlice, MulticallActions } from './slice'
 import { toCallKey } from './utils/callKeys'
+import { MulticallContext } from './context'
+import { Call } from './types'
 
 describe('multicall hooks', () => {
   let container: HTMLDivElement | null = null
-  let store: Store
   let actions: MulticallActions
+  let context: MulticallContext
+  let store: Store
   beforeEach(() => {
     container = document.createElement('div')
     document.body.appendChild(container)
     const slice = createMulticallSlice('multicall')
     actions = slice.actions
-    const rootReducer = combineReducers({ multicall: slice.reducer })
-    store = configureStore({ reducer: rootReducer })
+    context = { reducerPath: 'multicall', actions }
+    store = configureStore({ reducer: combineReducers({ multicall: slice.reducer }) })
   })
   afterEach(() => {
     if (container) {
@@ -29,54 +31,91 @@ describe('multicall hooks', () => {
     container = null
   })
 
-  describe('useCallsDataSubscription', () => {
-    const call = { address: 'abc', callData: '' }
-    const callKey = toCallKey(call)
-    function Caller() {
-      const callResults = useCallsDataSubscription({ reducerPath: 'multicall', actions }, 1, [call])
-      const [count, setCount] = useState(0)
-      useEffect(() => setCount((count) => ++count), [callResults])
+  function updateCallResult(call: Call, result: string) {
+    store.dispatch(
+      actions.updateMulticallResults({
+        chainId: 1,
+        blockNumber: 1,
+        results: { [toCallKey(call)]: result },
+      })
+    )
+  }
 
+  describe('useCallsDataSubscription', () => {
+    function Caller({ call }: { call: Call }) {
+      const calls = useMemo(() => [call], [call])
+      const [{ data }] = useCallsDataSubscription(context, 1, calls)
       return (
         <>
-          Data: {callResults[0].data} Count: {count}
+          {toCallKey(call)}:{data}
         </>
       )
     }
 
-    it('stabilizes values', () => {
-      act(() => {
+    describe('stabilizes values', () => {
+      it('returns data matching calls', () => {
+        const callA = { address: 'a', callData: '' }
+        const callB = { address: 'b', callData: '' }
+        updateCallResult(callA, '0xa')
+        updateCallResult(callB, '0xb')
+
         render(
           <Provider store={store}>
-            <Caller />
+            <Caller call={callA} />
           </Provider>,
           container
         )
+        expect(container?.textContent).toBe('a-:0xa')
+
+        render(
+          <Provider store={store}>
+            <Caller call={callB} />
+          </Provider>,
+          container
+        )
+        expect(container?.textContent).toBe('b-:0xb')
       })
 
-      act(() => {
-        store.dispatch(
-          actions.updateMulticallResults({
-            chainId: 1,
-            blockNumber: 1,
-            results: {
-              [callKey]: '0x1',
-            },
-          })
+      it('returns updates immediately', () => {
+        const call = { address: 'a', callData: '' }
+        updateCallResult(call, '0xa')
+
+        render(
+          <Provider store={store}>
+            <Caller call={call} />
+          </Provider>,
+          container
         )
-        store.dispatch(
-          actions.updateMulticallResults({
-            chainId: 1,
-            blockNumber: 1,
-            results: {
-              [callKey]: '0x1',
-            },
-          })
-        )
+        expect(container?.textContent).toBe('a-:0xa')
+
+        updateCallResult(call, '0xb')
+        expect(container?.textContent).toBe('a-:0xb')
       })
 
-      // expect 2 renders: initial + data available
-      expect(container?.textContent).toBe('Data: 0x1 Count: 2')
+      it('discards subsequent equivalent data', () => {
+        function Caller({ call }: { call: Call }) {
+          const calls = useMemo(() => [call], [call])
+          const data = useCallsDataSubscription(context, 1, calls)
+          const { current: initialData } = useRef(data)
+          return <>{(data === initialData).toString()}</>
+        }
+        const mock = jest.fn(Caller)
+        const MockCaller: typeof Caller = mock
+
+        const call = { address: 'a', callData: '' }
+        updateCallResult(call, '0xa')
+
+        render(
+          <Provider store={store}>
+            <MockCaller call={call} />
+          </Provider>,
+          container
+        )
+        expect(container?.textContent).toBe('true')
+
+        updateCallResult(call, '0xa')
+        expect(container?.textContent).toBe('true')
+      })
     })
   })
 })
