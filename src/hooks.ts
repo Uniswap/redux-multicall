@@ -66,25 +66,21 @@ export function useCallsDataSubscription(
 
 function useStabilizeCallResults(results: CallResult[]): CallResult[] {
   const [stableResults, setStableResults] = useState(results)
-  useEffect(() => {
-    setStableResults((stableResults) => {
-      if (
-        results.length === stableResults.length &&
-        results.every((result, i) => {
-          const stableResult = stableResults[i]
-          return (
-            result.valid === stableResult.valid &&
-            result.blockNumber === stableResult.blockNumber &&
-            result.data === stableResult.data
-          )
-        })
-      ) {
-        return stableResults
-      }
-      return results
+  const stabilizedResults = useMemo(
+    () => (areEqual(stableResults, results) ? stableResults : results),
+    [results, stableResults]
+  )
+  useEffect(() => setStableResults(stabilizedResults), [stabilizedResults])
+  return stabilizedResults
+}
+
+function areEqual(a: CallResult[], b: CallResult[]): boolean {
+  return (
+    a.length === b.length &&
+    a.every((_, i) => {
+      return a[i].valid === b[i].valid && a[i].blockNumber === b[i].blockNumber && a[i].data === b[i].data
     })
-  }, [results])
-  return stableResults
+  )
 }
 
 // Similar to useCallsDataSubscription above but for subscribing to
