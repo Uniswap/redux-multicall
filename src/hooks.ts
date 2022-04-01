@@ -1,6 +1,6 @@
 import { Contract } from '@ethersproject/contracts'
 import { Interface } from '@ethersproject/abi'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import { batch, useDispatch, useSelector } from 'react-redux'
 import { INVALID_CALL_STATE, INVALID_RESULT } from './constants'
 import type { MulticallContext } from './context'
@@ -48,38 +48,21 @@ export function useCallsDataSubscription(
     }
   }, [actions, chainId, dispatch, blocksPerFetch, serializedCallKeys])
 
-  // ensures that call results arrays remain referentially equivalent when unchanged to prevent
-  // spurious re-renders, which would otherwise occur because mapping always creates a new object
-  return useStabilizeCallResults(
-    useMemo(
-      () =>
-        calls.map<CallResult>((call) => {
-          if (!chainId || !call) return INVALID_RESULT
-          const result = callResults[chainId]?.[toCallKey(call)]
-          const data = result?.data && result.data !== '0x' ? result.data : undefined
-          return { valid: true, data, blockNumber: result?.blockNumber }
-        }),
-      [callResults, calls, chainId]
-    )
+  const results = useMemo(
+    () => calls.map((call) => chainId && call && callResults[chainId]?.[toCallKey(call)]),
+    [callResults, calls, chainId]
   )
-}
-
-function useStabilizeCallResults(results: CallResult[]): CallResult[] {
-  const [stableResults, setStableResults] = useState(results)
-  const stabilizedResults = useMemo(
-    () => (areEqual(stableResults, results) ? stableResults : results),
-    [results, stableResults]
-  )
-  useEffect(() => setStableResults(stabilizedResults), [stabilizedResults])
-  return stabilizedResults
-}
-
-function areEqual(a: CallResult[], b: CallResult[]): boolean {
-  return (
-    a.length === b.length &&
-    a.every((_, i) => {
-      return a[i].valid === b[i].valid && a[i].blockNumber === b[i].blockNumber && a[i].data === b[i].data
-    })
+  return useMemo(
+    () =>
+      results.map<CallResult>((result) => {
+        if (!result) return INVALID_RESULT
+        const data = result?.data && result.data !== '0x' ? result.data : undefined
+        return { valid: true, data, blockNumber: result?.blockNumber }
+      }),
+    // ensure that call results arrays remain referentially equivalent when unchanged to prevent
+    // spurious re-renders, which would otherwise occur because mapping always creates a new object
+    // eslint-disable-next-line
+    [...results]
   )
 }
 

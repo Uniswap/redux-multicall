@@ -92,7 +92,7 @@ describe('multicall hooks', () => {
         expect(container?.textContent).toBe('a-:0xb')
       })
 
-      it('discards subsequent equivalent data', () => {
+      it('ignores subsequent updates if data is stable', () => {
         function Caller({ call }: { call: Call }) {
           const calls = useMemo(() => [call], [call])
           const data = useCallsDataSubscription(context, 1, calls)
@@ -113,7 +113,12 @@ describe('multicall hooks', () => {
         )
         expect(container?.textContent).toBe('true')
 
+        // stable update
         updateCallResult(call, '0xa')
+        expect(container?.textContent).toBe('true')
+
+        // unrelated update
+        updateCallResult({ address: 'b', callData: '' }, '0xb')
         expect(container?.textContent).toBe('true')
       })
     })
