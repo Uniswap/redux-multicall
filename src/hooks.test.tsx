@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
 import { combineReducers, configureStore, Store } from '@reduxjs/toolkit'
-import React, { useMemo, useRef } from 'react'
+import React, { useRef } from 'react'
 import { render, unmountComponentAtNode } from 'react-dom'
 import { Provider } from 'react-redux'
 
@@ -42,14 +42,9 @@ describe('multicall hooks', () => {
   }
 
   describe('useCallsDataSubscription', () => {
-    function Caller({ call }: { call: Call }) {
-      const calls = useMemo(() => [call], [call])
-      const [{ data }] = useCallsDataSubscription(context, 1, calls)
-      return (
-        <>
-          {toCallKey(call)}:{data}
-        </>
-      )
+    function Caller({ calls }: { calls: Call[] }) {
+      const data = useCallsDataSubscription(context, 1, calls)
+      return <>{calls.map((call, i) => `${toCallKey(call)}:${data[i].data}`).join(';')}</>
     }
 
     describe('stabilizes values', () => {
@@ -61,7 +56,7 @@ describe('multicall hooks', () => {
 
         render(
           <Provider store={store}>
-            <Caller call={callA} />
+            <Caller calls={[callA]} />
           </Provider>,
           container
         )
@@ -69,11 +64,19 @@ describe('multicall hooks', () => {
 
         render(
           <Provider store={store}>
-            <Caller call={callB} />
+            <Caller calls={[callB]} />
           </Provider>,
           container
         )
         expect(container?.textContent).toBe('b-:0xb')
+
+        render(
+          <Provider store={store}>
+            <Caller calls={[callA, callB]} />
+          </Provider>,
+          container
+        )
+        expect(container?.textContent).toBe('a-:0xa;b-:0xb')
       })
 
       it('returns updates immediately', () => {
@@ -82,7 +85,7 @@ describe('multicall hooks', () => {
 
         render(
           <Provider store={store}>
-            <Caller call={call} />
+            <Caller calls={[call]} />
           </Provider>,
           container
         )
@@ -93,8 +96,7 @@ describe('multicall hooks', () => {
       })
 
       it('ignores subsequent updates if data is stable', () => {
-        function Caller({ call }: { call: Call }) {
-          const calls = useMemo(() => [call], [call])
+        function Caller({ calls }: { calls: Call[] }) {
           const data = useCallsDataSubscription(context, 1, calls)
           const { current: initialData } = useRef(data)
           return <>{(data === initialData).toString()}</>
@@ -107,7 +109,7 @@ describe('multicall hooks', () => {
 
         render(
           <Provider store={store}>
-            <MockCaller call={call} />
+            <MockCaller calls={[call]} />
           </Provider>,
           container
         )

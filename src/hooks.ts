@@ -1,6 +1,6 @@
 import { Contract } from '@ethersproject/contracts'
 import { Interface } from '@ethersproject/abi'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { batch, useDispatch, useSelector } from 'react-redux'
 import { INVALID_CALL_STATE, INVALID_RESULT } from './constants'
 import type { MulticallContext } from './context'
@@ -48,21 +48,27 @@ export function useCallsDataSubscription(
     }
   }, [actions, chainId, dispatch, blocksPerFetch, serializedCallKeys])
 
-  const results = useMemo(
-    () => calls.map((call) => chainId && call && callResults[chainId]?.[toCallKey(call)]),
-    [callResults, calls, chainId]
-  )
-  return useMemo(
-    () =>
-      results.map<CallResult>((result) => {
-        if (!result) return INVALID_RESULT
-        const data = result?.data && result.data !== '0x' ? result.data : undefined
-        return { valid: true, data, blockNumber: result?.blockNumber }
-      }),
-    // ensure that call results arrays remain referentially equivalent when unchanged to prevent
-    // spurious re-renders, which would otherwise occur because mapping always creates a new object
-    // eslint-disable-next-line
-    results
+  // ensure that call results arrays remain referentially equivalent when unchanged to prevent
+  // spurious re-renders, which would otherwise occur because mapping always creates a new object
+  const stableResults = useRef<CallResult[]>([])
+  return useMemo(() => {
+    const results = calls.map<CallResult>((call) => {
+      if (!chainId || !call) return INVALID_RESULT
+      const result = callResults[chainId]?.[toCallKey(call)]
+      const data = result?.data && result.data !== '0x' ? result.data : undefined
+      return { valid: true, data, blockNumber: result?.blockNumber }
+    })
+    if (!areCallResultsEqual(results, stableResults.current)) {
+      stableResults.current = results
+    }
+    return stableResults.current
+  }, [callResults, calls, chainId])
+}
+
+function areCallResultsEqual(a: CallResult[], b: CallResult[]) {
+  if (a.length !== b.length) return false
+  return a.every(
+    (_, i) => a[i].valid === b[i].valid && a[i].data === b[i].data && a[i].blockNumber === b[i].blockNumber
   )
 }
 
