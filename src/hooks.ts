@@ -1,6 +1,6 @@
 import { Contract } from '@ethersproject/contracts'
 import { Interface } from '@ethersproject/abi'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { batch, useDispatch, useSelector } from 'react-redux'
 import { INVALID_CALL_STATE, INVALID_RESULT } from './constants'
 import type { MulticallContext } from './context'
@@ -12,7 +12,7 @@ import { isValidMethodArgs, MethodArg } from './validation'
 type OptionalMethodInputs = Array<MethodArg | MethodArg[] | undefined> | undefined
 
 // the lowest level call for subscribing to contract data
-function useCallsDataSubscription(
+export function useCallsDataSubscription(
   context: MulticallContext,
   chainId: number | undefined,
   calls: Array<Call | undefined>,
@@ -48,15 +48,27 @@ function useCallsDataSubscription(
     }
   }, [actions, chainId, dispatch, blocksPerFetch, serializedCallKeys])
 
-  return useMemo(
-    () =>
-      calls.map<CallResult>((call) => {
-        if (!chainId || !call) return INVALID_RESULT
-        const result = callResults[chainId]?.[toCallKey(call)]
-        const data = result?.data && result.data !== '0x' ? result.data : undefined
-        return { valid: true, data, blockNumber: result?.blockNumber }
-      }),
-    [callResults, calls, chainId]
+  // ensure that call results arrays remain referentially equivalent when unchanged to prevent
+  // spurious re-renders, which would otherwise occur because mapping always creates a new object
+  const stableResults = useRef<CallResult[]>([])
+  return useMemo(() => {
+    const results = calls.map<CallResult>((call) => {
+      if (!chainId || !call) return INVALID_RESULT
+      const result = callResults[chainId]?.[toCallKey(call)]
+      const data = result?.data && result.data !== '0x' ? result.data : undefined
+      return { valid: true, data, blockNumber: result?.blockNumber }
+    })
+    if (!areCallResultsEqual(results, stableResults.current)) {
+      stableResults.current = results
+    }
+    return stableResults.current
+  }, [callResults, calls, chainId])
+}
+
+function areCallResultsEqual(a: CallResult[], b: CallResult[]) {
+  if (a.length !== b.length) return false
+  return a.every(
+    (_, i) => a[i].valid === b[i].valid && a[i].data === b[i].data && a[i].blockNumber === b[i].blockNumber
   )
 }
 

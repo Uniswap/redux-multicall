@@ -90,6 +90,7 @@ export function createMulticallSlice(reducerPath: string) {
         Object.keys(results).forEach((callKey) => {
           const current = state.callResults[chainId][callKey]
           if ((current?.blockNumber ?? 0) > blockNumber) return
+          if (current?.data === results[callKey] && current?.blockNumber === blockNumber) return
           state.callResults[chainId][callKey] = {
             data: results[callKey],
             blockNumber,
