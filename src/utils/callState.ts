@@ -1,11 +1,11 @@
-import type { utils } from 'ethers'
+import type { FunctionFragment, Interface } from '@ethersproject/abi'
 import { INVALID_CALL_STATE, LOADING_CALL_STATE } from '../constants'
 import type { CallResult, CallState, CallStateResult } from '../types'
 
 export function toCallState(
   callResult: CallResult | undefined,
-  contractInterface: utils.Interface | undefined,
-  fragment: utils.FunctionFragment | undefined,
+  contractInterface: Interface | undefined,
+  fragment: FunctionFragment | undefined,
   latestBlockNumber: number | undefined
 ): CallState {
   if (!callResult) return INVALID_CALL_STATE

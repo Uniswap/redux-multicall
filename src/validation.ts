@@ -1,4 +1,4 @@
-import { BigNumber } from 'ethers'
+import { BigNumber } from '@ethersproject/bignumber'
 
 export type MethodArg = string | number | BigNumber
 export type MethodArgs = Array<MethodArg | MethodArg[]>
