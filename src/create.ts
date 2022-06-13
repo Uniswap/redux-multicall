@@ -8,14 +8,7 @@ import {
   useSingleContractWithCallData as _useSingleContractWithCallData,
 } from './hooks'
 import { createMulticallSlice } from './slice'
-import { createUpdater } from './updater'
-
-type RemoveFirstFromTuple<T extends any[]> = T['length'] extends 0
-  ? undefined
-  : ((...b: T) => void) extends (a: any, ...b: infer I) => void
-  ? I
-  : []
-type ParamsWithoutContext<T extends (...args: any) => any> = RemoveFirstFromTuple<Parameters<T>>
+import { createUpdaterAndHooks } from './updater'
 
 export interface MulticallOptions {
   reducerPath?: string
@@ -29,31 +22,8 @@ export function createMulticall(options?: MulticallOptions) {
   const { actions, reducer } = slice
   const context: MulticallContext = { reducerPath, actions }
 
-  const useMultipleContractSingleData = (...args: ParamsWithoutContext<typeof _useMultipleContractSingleData>) =>
-    _useMultipleContractSingleData(context, ...args)
-  const useSingleContractMultipleData = (...args: ParamsWithoutContext<typeof _useSingleContractMultipleData>) =>
-    _useSingleContractMultipleData(context, ...args)
-  const useSingleContractWithCallData = (...args: ParamsWithoutContext<typeof _useSingleContractWithCallData>) =>
-    _useSingleContractWithCallData(context, ...args)
-  const useSingleCallResult = (...args: ParamsWithoutContext<typeof _useSingleCallResult>) =>
-    _useSingleCallResult(context, ...args)
-  const useMultiChainMultiContractSingleData = (
-    ...args: ParamsWithoutContext<typeof _useMultiChainMultiContractSingleData>
-  ) => _useMultiChainMultiContractSingleData(context, ...args)
-  const useMultiChainSingleContractSingleData = (
-    ...args: ParamsWithoutContext<typeof _useMultiChainSingleContractSingleData>
-  ) => _useMultiChainSingleContractSingleData(context, ...args)
-  const hooks = {
-    useMultipleContractSingleData,
-    useSingleContractMultipleData,
-    useSingleContractWithCallData,
-    useSingleCallResult,
-    useMultiChainMultiContractSingleData,
-    useMultiChainSingleContractSingleData,
-  }
-
-  const Updater = createUpdater(context)
-
+  const { UpdaterContextBound: Updater, hooks } = createUpdaterAndHooks(context)
+  
   return {
     reducerPath,
     reducer,

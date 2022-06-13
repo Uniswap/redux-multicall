@@ -3,6 +3,7 @@ import { Interface } from '@ethersproject/abi'
 import { useEffect, useMemo, useRef } from 'react'
 import { batch, useDispatch, useSelector } from 'react-redux'
 import { INVALID_CALL_STATE, INVALID_RESULT } from './constants'
+import { ListenerOptionsContext } from './updater'
 import type { MulticallContext } from './context'
 import type { Call, CallResult, CallState, ListenerOptionsWithGas, WithMulticallState } from './types'
 import { callKeysToCalls, callsToCallKeys, toCallKey } from './utils/callKeys'
@@ -146,16 +147,19 @@ function useMultichainCallsDataSubscription(
 }
 
 // formats many calls to a single function on a single contract, with the function name and inputs specified
-export function useSingleContractMultipleData(
+export function useSingleContractMultipleData(this:ListenerOptionsContext,
   context: MulticallContext,
   chainId: number | undefined,
   latestBlockNumber: number | undefined,
   contract: Contract | null | undefined,
   methodName: string,
   callInputs: OptionalMethodInputs[],
-  options?: Partial<ListenerOptionsWithGas>
+  options: Partial<ListenerOptionsWithGas> | undefined
 ): CallState[] {
-  const { gasRequired, blocksPerFetch } = options ?? {}
+  const { gasRequired, blocksPerFetch } = options ?? {
+    gasRequired: undefined,
+    blocksPerFetch: this.listenerOptions?.blocksPerFetch
+  }
 
   // Create ethers function fragment
   const fragment = useMemo(() => contract?.interface?.getFunction(methodName), [contract, methodName])
@@ -189,7 +193,7 @@ export function useSingleContractMultipleData(
   }, [results, contract, fragment, latestBlockNumber])
 }
 
-export function useMultipleContractSingleData(
+export function useMultipleContractSingleData(this:ListenerOptionsContext,
   context: MulticallContext,
   chainId: number | undefined,
   latestBlockNumber: number | undefined,
@@ -199,7 +203,10 @@ export function useMultipleContractSingleData(
   callInputs?: OptionalMethodInputs,
   options?: Partial<ListenerOptionsWithGas>
 ): CallState[] {
-  const { gasRequired, blocksPerFetch } = options ?? {}
+  const { gasRequired, blocksPerFetch } = options ?? {
+    gasRequired: undefined,
+    blocksPerFetch: this.listenerOptions?.blocksPerFetch
+  }
 
   const { fragment, callData } = useCallData(methodName, contractInterface, callInputs)
 
@@ -220,7 +227,7 @@ export function useMultipleContractSingleData(
   }, [fragment, results, contractInterface, latestBlockNumber])
 }
 
-export function useSingleCallResult(
+export function useSingleCallResult(this:ListenerOptionsContext,
   context: MulticallContext,
   chainId: number | undefined,
   latestBlockNumber: number | undefined,
@@ -230,13 +237,13 @@ export function useSingleCallResult(
   options?: Partial<ListenerOptionsWithGas>
 ): CallState {
   return (
-    useSingleContractMultipleData(context, chainId, latestBlockNumber, contract, methodName, [inputs], options)[0] ??
+    useSingleContractMultipleData.bind(this)(context, chainId, latestBlockNumber, contract, methodName, [inputs], options)[0] ??
     INVALID_CALL_STATE
   )
 }
 
 // formats many calls to any number of functions on a single contract, with only the calldata specified
-export function useSingleContractWithCallData(
+export function useSingleContractWithCallData(this:ListenerOptionsContext,
   context: MulticallContext,
   chainId: number | undefined,
   latestBlockNumber: number | undefined,
@@ -244,7 +251,10 @@ export function useSingleContractWithCallData(
   callDatas: string[],
   options?: Partial<ListenerOptionsWithGas>
 ): CallState[] {
-  const { gasRequired, blocksPerFetch } = options ?? {}
+  const { gasRequired, blocksPerFetch } = options ?? {
+    gasRequired: undefined,
+    blocksPerFetch: this.listenerOptions?.blocksPerFetch
+  }
 
   // Create call objects
   const calls = useMemo(() => {
@@ -273,7 +283,7 @@ export function useSingleContractWithCallData(
 
 // Similar to useMultipleContractSingleData but instead of multiple contracts on one chain,
 // this is for querying compatible contracts on multiple chains
-export function useMultiChainMultiContractSingleData(
+export function useMultiChainMultiContractSingleData(this:ListenerOptionsContext,
   context: MulticallContext,
   chainToBlockNumber: Record<number, number | undefined>,
   chainToAddresses: Record<number, Array<string | undefined>>,
@@ -282,7 +292,10 @@ export function useMultiChainMultiContractSingleData(
   callInputs?: OptionalMethodInputs,
   options?: Partial<ListenerOptionsWithGas>
 ): Record<number, CallState[]> {
-  const { gasRequired, blocksPerFetch } = options ?? {}
+  const { gasRequired, blocksPerFetch } = options ?? {
+    gasRequired: undefined,
+    blocksPerFetch: this.listenerOptions?.blocksPerFetch
+  }
 
   const { fragment, callData } = useCallData(methodName, contractInterface, callInputs)
 
@@ -317,7 +330,7 @@ export function useMultiChainMultiContractSingleData(
 
 // Similar to useSingleCallResult but instead of one contract on one chain,
 // this is for querying a contract on multiple chains
-export function useMultiChainSingleContractSingleData(
+export function useMultiChainSingleContractSingleData(this:ListenerOptionsContext,
   context: MulticallContext,
   chainToBlockNumber: Record<number, number | undefined>,
   chainToAddress: Record<number, string | undefined>,
@@ -336,7 +349,7 @@ export function useMultiChainSingleContractSingleData(
     }, {} as Record<number, Array<string | undefined>>)
   }, [chainToAddress])
 
-  const multiContractResults = useMultiChainMultiContractSingleData(
+  const multiContractResults = useMultiChainMultiContractSingleData.bind(this)(
     context,
     chainToBlockNumber,
     chainIdToAddresses,

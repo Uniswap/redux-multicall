@@ -4,11 +4,19 @@ import type { UniswapInterfaceMulticall } from './abi/types'
 import { CHUNK_GAS_LIMIT, DEFAULT_CALL_GAS_REQUIRED } from './constants'
 import type { MulticallContext } from './context'
 import type { MulticallActions } from './slice'
-import type { Call, MulticallState, WithMulticallState } from './types'
+import type { Call, MulticallState, WithMulticallState, ListenerOptions} from './types'
 import { parseCallKey, toCallKey } from './utils/callKeys'
 import chunkCalls from './utils/chunkCalls'
 import { retry, RetryableError } from './utils/retry'
 import useDebounce from './utils/useDebounce'
+import {
+  useMultiChainMultiContractSingleData as _useMultiChainMultiContractSingleData,
+  useMultiChainSingleContractSingleData as _useMultiChainSingleContractSingleData,
+  useMultipleContractSingleData as _useMultipleContractSingleData,
+  useSingleCallResult as _useSingleCallResult,
+  useSingleContractMultipleData as _useSingleContractMultipleData,
+  useSingleContractWithCallData as _useSingleContractWithCallData,
+} from './hooks'
 
 const FETCH_RETRY_CONFIG = {
   n: Infinity,
@@ -88,7 +96,8 @@ async function fetchChunk(
  */
 export function activeListeningKeys(
   allListeners: MulticallState['callListeners'],
-  chainId?: number
+  chainId?: number,
+  listenerOptions?: ListenerOptions
 ): { [callKey: string]: number } {
   if (!allListeners || !chainId) return {}
   const listeners = allListeners[chainId]
@@ -99,7 +108,7 @@ export function activeListeningKeys(
 
     memo[callKey] = Object.keys(keyListeners)
       .filter((key) => {
-        const blocksPerFetch = parseInt(key)
+        const blocksPerFetch = !!listenerOptions?.blocksPerFetch ? listenerOptions.blocksPerFetch : parseInt(key)
         if (blocksPerFetch <= 0) return false
         return keyListeners[blocksPerFetch] > 0
       })
@@ -121,7 +130,8 @@ export function outdatedListeningKeys(
   callResults: MulticallState['callResults'],
   listeningKeys: { [callKey: string]: number },
   chainId: number | undefined,
-  latestBlockNumber: number | undefined
+  latestBlockNumber: number | undefined,
+  listenerOptions?: ListenerOptions
 ): string[] {
   if (!chainId || !latestBlockNumber) return []
   const results = callResults[chainId]
@@ -129,7 +139,7 @@ export function outdatedListeningKeys(
   if (!results) return Object.keys(listeningKeys)
 
   return Object.keys(listeningKeys).filter((callKey) => {
-    const blocksPerFetch = listeningKeys[callKey]
+    const blocksPerFetch = !!listenerOptions?.blocksPerFetch ? listenerOptions.blocksPerFetch : listeningKeys[callKey]
 
     const data = callResults[chainId][callKey]
     // no data, must fetch
@@ -230,10 +240,11 @@ export interface UpdaterProps {
   latestBlockNumber: number | undefined
   contract: UniswapInterfaceMulticall
   isDebug?: boolean
+  listenerOptions?: ListenerOptions
 }
 
 function Updater(props: UpdaterProps): null {
-  const { context, chainId, latestBlockNumber, contract, isDebug } = props
+  const { context, chainId, latestBlockNumber, contract, isDebug, listenerOptions} = props
   const { actions, reducerPath } = context
   const dispatch = useDispatch()
   const state = useSelector((state: WithMulticallState) => state[reducerPath])
@@ -242,11 +253,11 @@ function Updater(props: UpdaterProps): null {
   const cancellations = useRef<{ blockNumber: number; cancellations: (() => void)[] }>()
 
   const listeningKeys: { [callKey: string]: number } = useMemo(() => {
-    return activeListeningKeys(debouncedListeners, chainId)
+    return activeListeningKeys(debouncedListeners, chainId, listenerOptions)
   }, [debouncedListeners, chainId])
 
   const serializedOutdatedCallKeys = useMemo(() => {
-    const outdatedCallKeys = outdatedListeningKeys(state.callResults, listeningKeys, chainId, latestBlockNumber)
+    const outdatedCallKeys = outdatedListeningKeys(state.callResults, listeningKeys, chainId, latestBlockNumber, listenerOptions)
     return JSON.stringify(outdatedCallKeys.sort())
   }, [chainId, state.callResults, listeningKeys, latestBlockNumber])
 
@@ -299,9 +310,57 @@ function Updater(props: UpdaterProps): null {
   return null
 }
 
-export function createUpdater(context: MulticallContext) {
+type RemoveFirstFromTuple<T extends any[]> = T['length'] extends 0
+  ? undefined
+  : ((...b: T) => void) extends (a: any, ...b: infer I) => void
+  ? I
+  : []
+type ParamsWithoutContext<T extends (...args: any) => any> = RemoveFirstFromTuple<Parameters<T>>
+
+export interface ListenerOptionsContext {
+  readonly listenerOptions?: ListenerOptions
+}
+
+function getFnWithListenerOptionsContext(fn: Function, globalListenerOptions?: ListenerOptions) {
+  const listenerOptionsContext:ListenerOptionsContext = {
+    listenerOptions: globalListenerOptions
+  }
+
+  return fn.bind(listenerOptionsContext)
+}
+
+function getHooks(context: MulticallContext, globalListenerOptions?: ListenerOptions) {
+  const useMultipleContractSingleData = (...args: ParamsWithoutContext<typeof _useMultipleContractSingleData>) =>
+    (getFnWithListenerOptionsContext(_useMultipleContractSingleData, globalListenerOptions)(context, ...args))
+  const useSingleContractMultipleData = (...args: ParamsWithoutContext<typeof _useSingleContractMultipleData>) =>
+    (getFnWithListenerOptionsContext(_useSingleContractMultipleData, globalListenerOptions)(context, ...args))
+  const useSingleContractWithCallData = (...args: ParamsWithoutContext<typeof _useSingleContractWithCallData>) =>
+    (getFnWithListenerOptionsContext(_useSingleContractWithCallData, globalListenerOptions)(context, ...args))
+  const useSingleCallResult = (...args: ParamsWithoutContext<typeof _useSingleCallResult>) =>
+    (getFnWithListenerOptionsContext(_useSingleCallResult, globalListenerOptions)(context, ...args))
+  const useMultiChainMultiContractSingleData = (
+    ...args: ParamsWithoutContext<typeof _useMultiChainMultiContractSingleData>
+  ) => (getFnWithListenerOptionsContext(_useMultiChainMultiContractSingleData, globalListenerOptions)(context, ...args))
+  const useMultiChainSingleContractSingleData = (
+    ...args: ParamsWithoutContext<typeof _useMultiChainSingleContractSingleData>
+  ) => (getFnWithListenerOptionsContext(_useMultiChainSingleContractSingleData, globalListenerOptions)(context, ...args))
+  const hooks = {
+    useMultipleContractSingleData,
+    useSingleContractMultipleData,
+    useSingleContractWithCallData,
+    useSingleCallResult,
+    useMultiChainMultiContractSingleData,
+    useMultiChainSingleContractSingleData,
+  }
+  return hooks
+}
+
+export function createUpdaterAndHooks(context: MulticallContext) {
+  let listenerOptions
   const UpdaterContextBound = (props: Omit<UpdaterProps, 'context'>) => {
+    listenerOptions = props.listenerOptions
     return <Updater context={context} {...props} />
   }
-  return UpdaterContextBound
+  const hooks = getHooks(context, listenerOptions)
+  return {UpdaterContextBound, hooks}
 }
