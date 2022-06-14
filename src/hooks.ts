@@ -2,9 +2,9 @@ import { Contract } from '@ethersproject/contracts'
 import { Interface } from '@ethersproject/abi'
 import { useEffect, useMemo, useRef } from 'react'
 import { batch, useDispatch, useSelector } from 'react-redux'
-import { INVALID_CALL_STATE, INVALID_RESULT, DEFAULT_BLOCKS_PER_FETCH} from './constants'
+import { INVALID_CALL_STATE, INVALID_RESULT, DEFAULT_BLOCKS_PER_FETCH } from './constants'
 import type { MulticallContext } from './context'
-import type { Call, CallResult, CallState, ListenerOptionsWithGas, WithMulticallState} from './types'
+import type { Call, CallResult, CallState, ListenerOptionsWithGas, WithMulticallState } from './types'
 import { callKeysToCalls, callsToCallKeys, toCallKey } from './utils/callKeys'
 import { toCallState } from './utils/callState'
 import { isValidMethodArgs, MethodArg } from './validation'
@@ -106,8 +106,9 @@ function useMultichainCallsDataSubscription(
       for (const [chainId, callKeys] of chainCallKeysTuples) {
         const calls = callKeysToCalls(callKeys)
         if (!calls?.length) continue
-        const blocksPerFetchForChain = (defaultListenerOptions ?? {})[chainId]?.blocksPerFetch ?? DEFAULT_BLOCKS_PER_FETCH
-        
+        const blocksPerFetchForChain =
+          (defaultListenerOptions ?? {})[chainId]?.blocksPerFetch ?? DEFAULT_BLOCKS_PER_FETCH
+
         dispatch(
           actions.addMulticallListeners({
             chainId,
@@ -123,7 +124,8 @@ function useMultichainCallsDataSubscription(
         for (const [chainId, callKeys] of chainCallKeysTuples) {
           const calls = callKeysToCalls(callKeys)
           if (!calls?.length) continue
-          const blocksPerFetchForChain = (defaultListenerOptions ?? {})[chainId]?.blocksPerFetch ?? DEFAULT_BLOCKS_PER_FETCH
+          const blocksPerFetchForChain =
+            (defaultListenerOptions ?? {})[chainId]?.blocksPerFetch ?? DEFAULT_BLOCKS_PER_FETCH
           dispatch(
             actions.removeMulticallListeners({
               chainId,
@@ -163,10 +165,10 @@ export function useSingleContractMultipleData(
   options: Partial<ListenerOptionsWithGas> | undefined
 ): CallState[] {
   const { reducerPath } = context
-  const defaultListenerOptions = useSelector((state: WithMulticallState) => state[reducerPath].defaultListenerOptions) 
+  const defaultListenerOptions = useSelector((state: WithMulticallState) => state[reducerPath].defaultListenerOptions)
   const { gasRequired, blocksPerFetch } = {
     gasRequired: options?.gasRequired,
-    blocksPerFetch: chainId ? (defaultListenerOptions ?? {})[chainId]?.blocksPerFetch : undefined
+    blocksPerFetch: chainId ? (defaultListenerOptions ?? {})[chainId]?.blocksPerFetch : undefined,
   }
 
   // Create ethers function fragment
@@ -212,10 +214,10 @@ export function useMultipleContractSingleData(
   options?: Partial<ListenerOptionsWithGas>
 ): CallState[] {
   const { reducerPath } = context
-  const defaultListenerOptions = useSelector((state: WithMulticallState) => state[reducerPath].defaultListenerOptions) 
+  const defaultListenerOptions = useSelector((state: WithMulticallState) => state[reducerPath].defaultListenerOptions)
   const { gasRequired, blocksPerFetch } = {
     gasRequired: options?.gasRequired,
-    blocksPerFetch: chainId ? (defaultListenerOptions ?? {})[chainId]?.blocksPerFetch : undefined
+    blocksPerFetch: chainId ? (defaultListenerOptions ?? {})[chainId]?.blocksPerFetch : undefined,
   }
 
   const { fragment, callData } = useCallData(methodName, contractInterface, callInputs)
@@ -262,10 +264,10 @@ export function useSingleContractWithCallData(
   options?: Partial<ListenerOptionsWithGas>
 ): CallState[] {
   const { reducerPath } = context
-  const defaultListenerOptions = useSelector((state: WithMulticallState) => state[reducerPath].defaultListenerOptions) 
+  const defaultListenerOptions = useSelector((state: WithMulticallState) => state[reducerPath].defaultListenerOptions)
   const { gasRequired, blocksPerFetch } = {
     gasRequired: options?.gasRequired,
-    blocksPerFetch: chainId ? (defaultListenerOptions ?? {})[chainId]?.blocksPerFetch : undefined
+    blocksPerFetch: chainId ? (defaultListenerOptions ?? {})[chainId]?.blocksPerFetch : undefined,
   }
 
   // Create call objects

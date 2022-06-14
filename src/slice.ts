@@ -1,5 +1,11 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { MulticallFetchingPayload, MulticallListenerPayload, MulticallResultsPayload, MulticallState, MulticallListenerOptionsPayload } from './types'
+import {
+  MulticallFetchingPayload,
+  MulticallListenerPayload,
+  MulticallResultsPayload,
+  MulticallState,
+  MulticallListenerOptionsPayload,
+} from './types'
 import { toCallKey } from './utils/callKeys'
 
 const initialState: MulticallState = {

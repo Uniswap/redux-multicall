@@ -66,5 +66,8 @@
     "rules": {
       "no-useless-computed-key": "off"
     }
+  },
+  "dependencies": {
+    "dotenv": "^16.0.1"
   }
 }
