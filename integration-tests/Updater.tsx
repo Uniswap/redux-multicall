@@ -9,10 +9,17 @@ interface Props {
   blocksPerFetch?: number
 }
 
-export function Updater({ chainId, blockNumber, blocksPerFetch}: Props) {
+export function Updater({ chainId, blockNumber, blocksPerFetch }: Props) {
   const contract = useContract(chainId)
   const listenerOptions = blocksPerFetch ? { blocksPerFetch } : undefined
-  return listenerOptions ?
-    <multicall.Updater chainId={chainId} latestBlockNumber={blockNumber} contract={contract} listenerOptions={listenerOptions} />
-    : <multicall.Updater chainId={chainId} latestBlockNumber={blockNumber} contract={contract} /> 
+  return listenerOptions ? (
+    <multicall.Updater
+      chainId={chainId}
+      latestBlockNumber={blockNumber}
+      contract={contract}
+      listenerOptions={listenerOptions}
+    />
+  ) : (
+    <multicall.Updater chainId={chainId} latestBlockNumber={blockNumber} contract={contract} />
+  )
 }
