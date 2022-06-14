@@ -2,10 +2,9 @@ import { Contract } from '@ethersproject/contracts'
 import { Interface } from '@ethersproject/abi'
 import { useEffect, useMemo, useRef } from 'react'
 import { batch, useDispatch, useSelector } from 'react-redux'
-import { INVALID_CALL_STATE, INVALID_RESULT } from './constants'
-import { ListenerOptionsContext } from './updater'
+import { INVALID_CALL_STATE, INVALID_RESULT, DEFAULT_BLOCKS_PER_FETCH} from './constants'
 import type { MulticallContext } from './context'
-import type { Call, CallResult, CallState, ListenerOptionsWithGas, WithMulticallState } from './types'
+import type { Call, CallResult, CallState, ListenerOptionsWithGas, WithMulticallState} from './types'
 import { callKeysToCalls, callsToCallKeys, toCallKey } from './utils/callKeys'
 import { toCallState } from './utils/callState'
 import { isValidMethodArgs, MethodArg } from './validation'
@@ -17,10 +16,11 @@ export function useCallsDataSubscription(
   context: MulticallContext,
   chainId: number | undefined,
   calls: Array<Call | undefined>,
-  blocksPerFetch = 1
+  blocksPerFetch?: number
 ): CallResult[] {
   const { reducerPath, actions } = context
   const callResults = useSelector((state: WithMulticallState) => state[reducerPath].callResults)
+  const defaultListenerOptions = useSelector((state: WithMulticallState) => state[reducerPath].defaultListenerOptions)
   const dispatch = useDispatch()
 
   const serializedCallKeys: string = useMemo(() => JSON.stringify(callsToCallKeys(calls)), [calls])
@@ -30,11 +30,13 @@ export function useCallsDataSubscription(
     const callKeys: string[] = JSON.parse(serializedCallKeys)
     const calls = callKeysToCalls(callKeys)
     if (!chainId || !calls) return
+    const blocksPerFetchForChain = (defaultListenerOptions ?? {})[chainId]?.blocksPerFetch ?? DEFAULT_BLOCKS_PER_FETCH
+
     dispatch(
       actions.addMulticallListeners({
         chainId,
         calls,
-        options: { blocksPerFetch },
+        options: { blocksPerFetch: blocksPerFetchForChain },
       })
     )
 
@@ -43,11 +45,11 @@ export function useCallsDataSubscription(
         actions.removeMulticallListeners({
           chainId,
           calls,
-          options: { blocksPerFetch },
+          options: { blocksPerFetch: blocksPerFetchForChain },
         })
       )
     }
-  }, [actions, chainId, dispatch, blocksPerFetch, serializedCallKeys])
+  }, [actions, chainId, dispatch, blocksPerFetch, serializedCallKeys, defaultListenerOptions])
 
   // ensure that call results arrays remain referentially equivalent when unchanged to prevent
   // spurious re-renders, which would otherwise occur because mapping always creates a new object
@@ -78,10 +80,11 @@ function areCallResultsEqual(a: CallResult[], b: CallResult[]) {
 function useMultichainCallsDataSubscription(
   context: MulticallContext,
   chainToCalls: Record<number, Array<Call | undefined>>,
-  blocksPerFetch = 1
+  blocksPerFetch?: number
 ): Record<number, CallResult[]> {
   const { reducerPath, actions } = context
   const callResults = useSelector((state: WithMulticallState) => state[reducerPath].callResults)
+  const defaultListenerOptions = useSelector((state: WithMulticallState) => state[reducerPath].defaultListenerOptions)
   const dispatch = useDispatch()
 
   const serializedCallKeys: string = useMemo(() => {
@@ -103,11 +106,13 @@ function useMultichainCallsDataSubscription(
       for (const [chainId, callKeys] of chainCallKeysTuples) {
         const calls = callKeysToCalls(callKeys)
         if (!calls?.length) continue
+        const blocksPerFetchForChain = (defaultListenerOptions ?? {})[chainId]?.blocksPerFetch ?? DEFAULT_BLOCKS_PER_FETCH
+        
         dispatch(
           actions.addMulticallListeners({
             chainId,
             calls,
-            options: { blocksPerFetch },
+            options: { blocksPerFetch: blocksPerFetchForChain },
           })
         )
       }
@@ -118,17 +123,18 @@ function useMultichainCallsDataSubscription(
         for (const [chainId, callKeys] of chainCallKeysTuples) {
           const calls = callKeysToCalls(callKeys)
           if (!calls?.length) continue
+          const blocksPerFetchForChain = (defaultListenerOptions ?? {})[chainId]?.blocksPerFetch ?? DEFAULT_BLOCKS_PER_FETCH
           dispatch(
             actions.removeMulticallListeners({
               chainId,
               calls,
-              options: { blocksPerFetch },
+              options: { blocksPerFetch: blocksPerFetchForChain },
             })
           )
         }
       })
     }
-  }, [actions, dispatch, blocksPerFetch, serializedCallKeys])
+  }, [actions, dispatch, blocksPerFetch, serializedCallKeys, defaultListenerOptions])
 
   return useMemo(
     () =>
@@ -147,7 +153,7 @@ function useMultichainCallsDataSubscription(
 }
 
 // formats many calls to a single function on a single contract, with the function name and inputs specified
-export function useSingleContractMultipleData(this:ListenerOptionsContext,
+export function useSingleContractMultipleData(
   context: MulticallContext,
   chainId: number | undefined,
   latestBlockNumber: number | undefined,
@@ -156,9 +162,11 @@ export function useSingleContractMultipleData(this:ListenerOptionsContext,
   callInputs: OptionalMethodInputs[],
   options: Partial<ListenerOptionsWithGas> | undefined
 ): CallState[] {
-  const { gasRequired, blocksPerFetch } = options ?? {
-    gasRequired: undefined,
-    blocksPerFetch: this.listenerOptions?.blocksPerFetch
+  const { reducerPath } = context
+  const defaultListenerOptions = useSelector((state: WithMulticallState) => state[reducerPath].defaultListenerOptions) 
+  const { gasRequired, blocksPerFetch } = {
+    gasRequired: options?.gasRequired,
+    blocksPerFetch: chainId ? (defaultListenerOptions ?? {})[chainId]?.blocksPerFetch : undefined
   }
 
   // Create ethers function fragment
@@ -193,7 +201,7 @@ export function useSingleContractMultipleData(this:ListenerOptionsContext,
   }, [results, contract, fragment, latestBlockNumber])
 }
 
-export function useMultipleContractSingleData(this:ListenerOptionsContext,
+export function useMultipleContractSingleData(
   context: MulticallContext,
   chainId: number | undefined,
   latestBlockNumber: number | undefined,
@@ -203,9 +211,11 @@ export function useMultipleContractSingleData(this:ListenerOptionsContext,
   callInputs?: OptionalMethodInputs,
   options?: Partial<ListenerOptionsWithGas>
 ): CallState[] {
-  const { gasRequired, blocksPerFetch } = options ?? {
-    gasRequired: undefined,
-    blocksPerFetch: this.listenerOptions?.blocksPerFetch
+  const { reducerPath } = context
+  const defaultListenerOptions = useSelector((state: WithMulticallState) => state[reducerPath].defaultListenerOptions) 
+  const { gasRequired, blocksPerFetch } = {
+    gasRequired: options?.gasRequired,
+    blocksPerFetch: chainId ? (defaultListenerOptions ?? {})[chainId]?.blocksPerFetch : undefined
   }
 
   const { fragment, callData } = useCallData(methodName, contractInterface, callInputs)
@@ -227,7 +237,7 @@ export function useMultipleContractSingleData(this:ListenerOptionsContext,
   }, [fragment, results, contractInterface, latestBlockNumber])
 }
 
-export function useSingleCallResult(this:ListenerOptionsContext,
+export function useSingleCallResult(
   context: MulticallContext,
   chainId: number | undefined,
   latestBlockNumber: number | undefined,
@@ -237,13 +247,13 @@ export function useSingleCallResult(this:ListenerOptionsContext,
   options?: Partial<ListenerOptionsWithGas>
 ): CallState {
   return (
-    useSingleContractMultipleData.bind(this)(context, chainId, latestBlockNumber, contract, methodName, [inputs], options)[0] ??
+    useSingleContractMultipleData(context, chainId, latestBlockNumber, contract, methodName, [inputs], options)[0] ??
     INVALID_CALL_STATE
   )
 }
 
 // formats many calls to any number of functions on a single contract, with only the calldata specified
-export function useSingleContractWithCallData(this:ListenerOptionsContext,
+export function useSingleContractWithCallData(
   context: MulticallContext,
   chainId: number | undefined,
   latestBlockNumber: number | undefined,
@@ -251,9 +261,11 @@ export function useSingleContractWithCallData(this:ListenerOptionsContext,
   callDatas: string[],
   options?: Partial<ListenerOptionsWithGas>
 ): CallState[] {
-  const { gasRequired, blocksPerFetch } = options ?? {
-    gasRequired: undefined,
-    blocksPerFetch: this.listenerOptions?.blocksPerFetch
+  const { reducerPath } = context
+  const defaultListenerOptions = useSelector((state: WithMulticallState) => state[reducerPath].defaultListenerOptions) 
+  const { gasRequired, blocksPerFetch } = {
+    gasRequired: options?.gasRequired,
+    blocksPerFetch: chainId ? (defaultListenerOptions ?? {})[chainId]?.blocksPerFetch : undefined
   }
 
   // Create call objects
@@ -283,7 +295,7 @@ export function useSingleContractWithCallData(this:ListenerOptionsContext,
 
 // Similar to useMultipleContractSingleData but instead of multiple contracts on one chain,
 // this is for querying compatible contracts on multiple chains
-export function useMultiChainMultiContractSingleData(this:ListenerOptionsContext,
+export function useMultiChainMultiContractSingleData(
   context: MulticallContext,
   chainToBlockNumber: Record<number, number | undefined>,
   chainToAddresses: Record<number, Array<string | undefined>>,
@@ -292,10 +304,7 @@ export function useMultiChainMultiContractSingleData(this:ListenerOptionsContext
   callInputs?: OptionalMethodInputs,
   options?: Partial<ListenerOptionsWithGas>
 ): Record<number, CallState[]> {
-  const { gasRequired, blocksPerFetch } = options ?? {
-    gasRequired: undefined,
-    blocksPerFetch: this.listenerOptions?.blocksPerFetch
-  }
+  const { gasRequired, blocksPerFetch } = options ?? {}
 
   const { fragment, callData } = useCallData(methodName, contractInterface, callInputs)
 
@@ -330,7 +339,7 @@ export function useMultiChainMultiContractSingleData(this:ListenerOptionsContext
 
 // Similar to useSingleCallResult but instead of one contract on one chain,
 // this is for querying a contract on multiple chains
-export function useMultiChainSingleContractSingleData(this:ListenerOptionsContext,
+export function useMultiChainSingleContractSingleData(
   context: MulticallContext,
   chainToBlockNumber: Record<number, number | undefined>,
   chainToAddress: Record<number, string | undefined>,
@@ -341,7 +350,6 @@ export function useMultiChainSingleContractSingleData(this:ListenerOptionsContex
 ): Record<number, CallState> {
   // This hook uses the more flexible useMultiChainMultiContractSingleData internally,
   // but transforms the inputs and outputs for convenience
-
   const chainIdToAddresses = useMemo(() => {
     return getChainIds(chainToAddress).reduce((result, chainId) => {
       result[chainId] = [chainToAddress[chainId]]
@@ -349,7 +357,7 @@ export function useMultiChainSingleContractSingleData(this:ListenerOptionsContex
     }, {} as Record<number, Array<string | undefined>>)
   }, [chainToAddress])
 
-  const multiContractResults = useMultiChainMultiContractSingleData.bind(this)(
+  const multiContractResults = useMultiChainMultiContractSingleData(
     context,
     chainToBlockNumber,
     chainIdToAddresses,

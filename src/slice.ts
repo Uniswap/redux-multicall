@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { MulticallFetchingPayload, MulticallListenerPayload, MulticallResultsPayload, MulticallState } from './types'
+import { MulticallFetchingPayload, MulticallListenerPayload, MulticallResultsPayload, MulticallState, MulticallListenerOptionsPayload } from './types'
 import { toCallKey } from './utils/callKeys'
 
 const initialState: MulticallState = {
@@ -96,6 +96,15 @@ export function createMulticallSlice(reducerPath: string) {
             blockNumber,
           }
         })
+      },
+
+      updateDefaultListenerOptions: (state, action: PayloadAction<MulticallListenerOptionsPayload>) => {
+        const { chainId, listenerOptions } = action.payload
+        console.log(`updateDefaultListenerOptions with ${chainId} and ${listenerOptions}`)
+        const defaultListenerOptions: MulticallState['defaultListenerOptions'] = state.defaultListenerOptions
+          ? state.defaultListenerOptions
+          : (state.defaultListenerOptions = {})
+        defaultListenerOptions[chainId] = listenerOptions
       },
     },
   })

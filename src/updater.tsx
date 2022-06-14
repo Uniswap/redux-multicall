@@ -264,6 +264,8 @@ function Updater(props: UpdaterProps): null {
   useEffect(() => {
     if (!latestBlockNumber || !chainId || !contract) return
 
+    if (listenerOptions) dispatch(actions.updateDefaultListenerOptions({chainId, listenerOptions}))
+
     const outdatedCallKeys: string[] = JSON.parse(serializedOutdatedCallKeys)
     if (outdatedCallKeys.length === 0) return
     const calls = outdatedCallKeys.map((key) => parseCallKey(key))
@@ -310,57 +312,9 @@ function Updater(props: UpdaterProps): null {
   return null
 }
 
-type RemoveFirstFromTuple<T extends any[]> = T['length'] extends 0
-  ? undefined
-  : ((...b: T) => void) extends (a: any, ...b: infer I) => void
-  ? I
-  : []
-type ParamsWithoutContext<T extends (...args: any) => any> = RemoveFirstFromTuple<Parameters<T>>
-
-export interface ListenerOptionsContext {
-  readonly listenerOptions?: ListenerOptions
-}
-
-function getFnWithListenerOptionsContext(fn: Function, globalListenerOptions?: ListenerOptions) {
-  const listenerOptionsContext:ListenerOptionsContext = {
-    listenerOptions: globalListenerOptions
-  }
-
-  return fn.bind(listenerOptionsContext)
-}
-
-function getHooks(context: MulticallContext, globalListenerOptions?: ListenerOptions) {
-  const useMultipleContractSingleData = (...args: ParamsWithoutContext<typeof _useMultipleContractSingleData>) =>
-    (getFnWithListenerOptionsContext(_useMultipleContractSingleData, globalListenerOptions)(context, ...args))
-  const useSingleContractMultipleData = (...args: ParamsWithoutContext<typeof _useSingleContractMultipleData>) =>
-    (getFnWithListenerOptionsContext(_useSingleContractMultipleData, globalListenerOptions)(context, ...args))
-  const useSingleContractWithCallData = (...args: ParamsWithoutContext<typeof _useSingleContractWithCallData>) =>
-    (getFnWithListenerOptionsContext(_useSingleContractWithCallData, globalListenerOptions)(context, ...args))
-  const useSingleCallResult = (...args: ParamsWithoutContext<typeof _useSingleCallResult>) =>
-    (getFnWithListenerOptionsContext(_useSingleCallResult, globalListenerOptions)(context, ...args))
-  const useMultiChainMultiContractSingleData = (
-    ...args: ParamsWithoutContext<typeof _useMultiChainMultiContractSingleData>
-  ) => (getFnWithListenerOptionsContext(_useMultiChainMultiContractSingleData, globalListenerOptions)(context, ...args))
-  const useMultiChainSingleContractSingleData = (
-    ...args: ParamsWithoutContext<typeof _useMultiChainSingleContractSingleData>
-  ) => (getFnWithListenerOptionsContext(_useMultiChainSingleContractSingleData, globalListenerOptions)(context, ...args))
-  const hooks = {
-    useMultipleContractSingleData,
-    useSingleContractMultipleData,
-    useSingleContractWithCallData,
-    useSingleCallResult,
-    useMultiChainMultiContractSingleData,
-    useMultiChainSingleContractSingleData,
-  }
-  return hooks
-}
-
-export function createUpdaterAndHooks(context: MulticallContext) {
-  let listenerOptions
+export function createUpdater(context: MulticallContext) {
   const UpdaterContextBound = (props: Omit<UpdaterProps, 'context'>) => {
-    listenerOptions = props.listenerOptions
     return <Updater context={context} {...props} />
   }
-  const hooks = getHooks(context, listenerOptions)
-  return {UpdaterContextBound, hooks}
+  return UpdaterContextBound
 }
