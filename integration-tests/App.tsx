@@ -1,4 +1,3 @@
-require('dotenv').config()
 import React from 'react'
 import { Provider } from 'react-redux'
 import { ChainId } from './consts'

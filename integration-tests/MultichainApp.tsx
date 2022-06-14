@@ -1,4 +1,3 @@
-require('dotenv').config()
 import React, { useMemo } from 'react'
 import { Provider } from 'react-redux'
 import { ChainId } from './consts'
@@ -15,8 +14,8 @@ export function MultichainApp() {
   const blocks = useMemo(() => [blockNumberMainnet, blockNumberRinkeby], [blockNumberMainnet, blockNumberRinkeby])
   return (
     <Provider store={store}>
-      <Updater chainId={ChainId.MAINNET} blockNumber={blockNumberMainnet} blocksPerFetch={2} />
-      <Updater chainId={ChainId.RINKEBY} blockNumber={blockNumberRinkeby} blocksPerFetch={5} />
+      <Updater chainId={ChainId.MAINNET} blockNumber={blockNumberMainnet} blocksPerFetch={2}/>
+      <Updater chainId={ChainId.RINKEBY} blockNumber={blockNumberRinkeby} blocksPerFetch={5}/>
       <Home chainIds={chains} blockNumbers={blocks} />
     </Provider>
   )
