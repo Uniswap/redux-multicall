@@ -3,6 +3,7 @@ import { combineReducers, configureStore, Store } from '@reduxjs/toolkit'
 import React, { useRef } from 'react'
 import { render, unmountComponentAtNode } from 'react-dom'
 import { Provider } from 'react-redux'
+import { renderHook } from '@testing-library/react-hooks'
 
 import { useCallsDataSubscription } from './hooks'
 import { createMulticallSlice, MulticallActions } from './slice'
@@ -122,6 +123,34 @@ describe('multicall hooks', () => {
         // unrelated update
         updateCallResult({ address: 'b', callData: '' }, '0xb')
         expect(container?.textContent).toBe('true')
+      })
+    })
+  })
+
+  describe('utilizes correct blocksPerFetch values from defaultListenerOptions in store', () => {
+    it('utilizes blocksPerFetch configured in defaultListenerOptions in store', () => {
+      const callA = { address: 'a', callData: '' }
+      updateCallResult(callA, '0xa')
+      const mockAddMulticallListeners = jest
+        .fn()
+        .mockImplementation((arg: Object) => ({ type: 'multicall/addMulticallListeners', payload: arg }))
+      const mockRemoveMulticallListeners = jest
+        .fn()
+        .mockImplementation((arg: Object) => ({ type: 'multicall/removeMulticallListeners', payload: arg }))
+      const mockContext = {
+        reducerPath: 'multicall',
+        actions: {
+          addMulticallListeners: mockAddMulticallListeners,
+          removeMulticallListeners: mockRemoveMulticallListeners,
+        },
+      }
+
+      renderHook(() => useCallsDataSubscription(mockContext, 1, [callA]))
+
+      expect(mockContext.actions.addMulticallListeners).toHaveBeenCalledWith({
+        chainId: 1,
+        calls: [{ address: 'a', callData: '' }],
+        options: { blocksPerFetch: 10 },
       })
     })
   })

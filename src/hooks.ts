@@ -13,7 +13,7 @@ type OptionalMethodInputs = Array<MethodArg | MethodArg[] | undefined> | undefin
 
 // the lowest level call for subscribing to contract data
 export function useCallsDataSubscription(
-  context: MulticallContext,
+  context: MulticallContext | any,
   chainId: number | undefined,
   calls: Array<Call | undefined>,
   blocksPerFetch?: number
@@ -22,7 +22,6 @@ export function useCallsDataSubscription(
   const callResults = useSelector((state: WithMulticallState) => state[reducerPath].callResults)
   const defaultListenerOptions = useSelector((state: WithMulticallState) => state[reducerPath].defaultListenerOptions)
   const dispatch = useDispatch()
-
   const serializedCallKeys: string = useMemo(() => JSON.stringify(callsToCallKeys(calls)), [calls])
 
   // update listeners when there is an actual change that persists for at least 100ms
