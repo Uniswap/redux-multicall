@@ -1,9 +1,10 @@
 import '@testing-library/jest-dom'
+import { mount } from 'enzyme'
 import { combineReducers, configureStore, Store } from '@reduxjs/toolkit'
 import React, { useRef } from 'react'
 import { render, unmountComponentAtNode } from 'react-dom'
 import { Provider } from 'react-redux'
-import { renderHook } from '@testing-library/react-hooks'
+//import { renderHook } from '@testing-library/react-hooks'
 
 import { useCallsDataSubscription } from './hooks'
 import { createMulticallSlice, MulticallActions } from './slice'
@@ -43,8 +44,16 @@ describe('multicall hooks', () => {
   }
 
   describe('useCallsDataSubscription', () => {
-    function Caller({ calls }: { calls: Call[] }) {
-      const data = useCallsDataSubscription(context, 1, calls)
+    function Caller({
+      calls,
+      multicallContext,
+      blocksPerFetch,
+    }: {
+      calls: Call[]
+      multicallContext?: MulticallContext | any
+      blocksPerFetch?: number
+    }) {
+      const data = useCallsDataSubscription(multicallContext ?? context, 1, calls, blocksPerFetch)
       return <>{calls.map((call, i) => `${toCallKey(call)}:${data[i].data}`).join(';')}</>
     }
 
@@ -125,32 +134,111 @@ describe('multicall hooks', () => {
         expect(container?.textContent).toBe('true')
       })
     })
-  })
 
-  describe('utilizes correct blocksPerFetch values from defaultListenerOptions in store', () => {
-    it('utilizes blocksPerFetch configured in defaultListenerOptions in store', () => {
-      const callA = { address: 'a', callData: '' }
-      updateCallResult(callA, '0xa')
-      const mockAddMulticallListeners = jest
-        .fn()
-        .mockImplementation((arg: Object) => ({ type: 'multicall/addMulticallListeners', payload: arg }))
-      const mockRemoveMulticallListeners = jest
-        .fn()
-        .mockImplementation((arg: Object) => ({ type: 'multicall/removeMulticallListeners', payload: arg }))
-      const mockContext = {
-        reducerPath: 'multicall',
-        actions: {
-          addMulticallListeners: mockAddMulticallListeners,
-          removeMulticallListeners: mockRemoveMulticallListeners,
-        },
-      }
+    describe('utilizes correct blocksPerFetch values from defaultListenerOptions in store', () => {
+      it('utilizes blocksPerFetch configured in defaultListenerOptions in store', () => {
+        const callA = { address: 'a', callData: '' }
+        updateCallResult(callA, '0xa')
 
-      renderHook(() => useCallsDataSubscription(mockContext, 1, [callA]))
+        store.dispatch(
+          actions.updateDefaultListenerOptions({
+            chainId: 1,
+            listenerOptions: {
+              blocksPerFetch: 10,
+            },
+          })
+        )
 
-      expect(mockContext.actions.addMulticallListeners).toHaveBeenCalledWith({
-        chainId: 1,
-        calls: [{ address: 'a', callData: '' }],
-        options: { blocksPerFetch: 10 },
+        const mockContext = {
+          reducerPath: 'multicall',
+          actions: {
+            addMulticallListeners: jest
+              .fn()
+              .mockImplementation((arg: Object) => ({ type: 'multicall/addMulticallListeners', payload: arg })),
+            removeMulticallListeners: jest
+              .fn()
+              .mockImplementation((arg: Object) => ({ type: 'multicall/removeMulticallListeners', payload: arg })),
+          },
+        }
+
+        mount(
+          <Provider store={store}>
+            <Caller calls={[callA]} multicallContext={mockContext} />
+          </Provider>
+        )
+
+        expect(mockContext.actions.addMulticallListeners).toHaveBeenCalledWith({
+          chainId: 1,
+          calls: [{ address: 'a', callData: '' }],
+          options: { blocksPerFetch: 10 },
+        })
+      })
+
+      it('overrides blocksPerFetch configured in defaultListenerOptions in store when blocksPerFetch param is provided', () => {
+        const callA = { address: 'a', callData: '' }
+        updateCallResult(callA, '0xa')
+
+        store.dispatch(
+          actions.updateDefaultListenerOptions({
+            chainId: 1,
+            listenerOptions: {
+              blocksPerFetch: 10,
+            },
+          })
+        )
+
+        const mockContext = {
+          reducerPath: 'multicall',
+          actions: {
+            addMulticallListeners: jest
+              .fn()
+              .mockImplementation((arg: Object) => ({ type: 'multicall/addMulticallListeners', payload: arg })),
+            removeMulticallListeners: jest
+              .fn()
+              .mockImplementation((arg: Object) => ({ type: 'multicall/removeMulticallListeners', payload: arg })),
+          },
+        }
+
+        mount(
+          <Provider store={store}>
+            <Caller calls={[callA]} multicallContext={mockContext} blocksPerFetch={5} />
+          </Provider>
+        )
+
+        expect(mockContext.actions.addMulticallListeners).toHaveBeenCalledWith({
+          chainId: 1,
+          calls: [{ address: 'a', callData: '' }],
+          options: { blocksPerFetch: 5 },
+        })
+      })
+
+      it('defaults blocksPerFetch to DEFAULT_BLOCK_PER_FETCH constant when blocksPerFetch param is undefined and no defaultListenerOptions is provided', () => {
+        const callA = { address: 'a', callData: '' }
+        updateCallResult(callA, '0xa')
+
+        const mockContext = {
+          reducerPath: 'multicall',
+          actions: {
+            addMulticallListeners: jest
+              .fn()
+              .mockImplementation((arg: Object) => ({ type: 'multicall/addMulticallListeners', payload: arg })),
+            removeMulticallListeners: jest
+              .fn()
+              .mockImplementation((arg: Object) => ({ type: 'multicall/removeMulticallListeners', payload: arg })),
+          },
+        }
+
+        mount(
+          <Provider store={store}>
+            <Caller calls={[callA]} multicallContext={mockContext} />
+          </Provider>
+        )
+
+        expect(mockContext.actions.addMulticallListeners).toHaveBeenCalledWith({
+          chainId: 1,
+          calls: [{ address: 'a', callData: '' }],
+          options: { blocksPerFetch: 1 },
+        })
       })
     })
   })
