@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom'
-import { mount } from 'enzyme'
+import { act } from 'react-dom/test-utils'
 import { combineReducers, configureStore, Store } from '@reduxjs/toolkit'
 import React, { useRef } from 'react'
 import { render, unmountComponentAtNode } from 'react-dom'
@@ -161,11 +161,14 @@ describe('multicall hooks', () => {
           },
         }
 
-        mount(
-          <Provider store={store}>
-            <Caller calls={[callA]} multicallContext={mockContext} />
-          </Provider>
-        )
+        act(() => {
+          render(
+            <Provider store={store}>
+              <Caller calls={[callA]} multicallContext={mockContext} />
+            </Provider>,
+            container
+          )
+        })
 
         expect(mockContext.actions.addMulticallListeners).toHaveBeenCalledWith({
           chainId: 1,
@@ -199,11 +202,14 @@ describe('multicall hooks', () => {
           },
         }
 
-        mount(
-          <Provider store={store}>
-            <Caller calls={[callA]} multicallContext={mockContext} blocksPerFetch={5} />
-          </Provider>
-        )
+        act(() => {
+          render(
+            <Provider store={store}>
+              <Caller calls={[callA]} multicallContext={mockContext} blocksPerFetch={5} />
+            </Provider>,
+            container
+          )
+        })
 
         expect(mockContext.actions.addMulticallListeners).toHaveBeenCalledWith({
           chainId: 1,
@@ -228,11 +234,14 @@ describe('multicall hooks', () => {
           },
         }
 
-        mount(
-          <Provider store={store}>
-            <Caller calls={[callA]} multicallContext={mockContext} />
-          </Provider>
-        )
+        act(() => {
+          render(
+            <Provider store={store}>
+              <Caller calls={[callA]} multicallContext={mockContext} />
+            </Provider>,
+            container
+          )
+        })
 
         expect(mockContext.actions.addMulticallListeners).toHaveBeenCalledWith({
           chainId: 1,
