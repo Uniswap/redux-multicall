@@ -244,8 +244,6 @@ function Updater(props: UpdaterProps): null {
 
   // wait for listeners to settle before triggering updates
   const debouncedListeners = useDebounce(state.callListeners, 100)
-  console.log('updater run triggered')
-  console.log(state.callListeners)
   const cancellations = useRef<{ blockNumber: number; cancellations: (() => void)[] }>()
 
   const listeningKeys: { [callKey: string]: number } = useMemo(() => {
