@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom'
+import { act } from 'react-dom/test-utils';
 import { render, screen, waitFor } from '@testing-library/react'
 import React from 'react'
 import { MultichainApp } from './MultichainApp'
@@ -14,15 +15,19 @@ describe('Use multicall in test multichain application', () => {
   })
 
   it('Renders correctly initially', () => {
-    render(<MultichainApp />)
+    act(() => {
+      render(<MultichainApp />)
+    })
     const h1 = screen.getByText('Hello Multichain Multicall') // H1 in Home
     expect(h1).toBeTruthy()
     const missing = screen.queryByText('Does Not Exist')
     expect(missing).toBeFalsy()
   })
-
+ 
   it('Performs a multichain single contract multicall query', async () => {
-    render(<MultichainApp />)
+    act(() => {
+      render(<MultichainApp />)
+    })
     // Check that block timestamp is correctly retrieved from block
     const timestamps1 = await waitFor(() => screen.getByTestId('blockTimestamps'), { timeout: 20_000 /* 20 seconds */ })
     expect(timestamps1 && timestamps1?.textContent).toBeTruthy()
