@@ -48,7 +48,7 @@ export interface MulticallState {
     }
   }
 
-  defaultListenerOptions?: {
+  listenerOptions?: {
     [chainId: number]: ListenerOptions
   }
 }

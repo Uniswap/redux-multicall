@@ -88,8 +88,7 @@ async function fetchChunk(
  */
 export function activeListeningKeys(
   allListeners: MulticallState['callListeners'],
-  chainId?: number,
-  listenerOptions?: ListenerOptions
+  chainId?: number
 ): { [callKey: string]: number } {
   if (!allListeners || !chainId) return {}
   const listeners = allListeners[chainId]
@@ -100,7 +99,7 @@ export function activeListeningKeys(
 
     memo[callKey] = Object.keys(keyListeners)
       .filter((key) => {
-        const blocksPerFetch = !!listenerOptions?.blocksPerFetch ? listenerOptions.blocksPerFetch : parseInt(key)
+        const blocksPerFetch = parseInt(key)
         if (blocksPerFetch <= 0) return false
         return keyListeners[blocksPerFetch] > 0
       })
@@ -122,8 +121,7 @@ export function outdatedListeningKeys(
   callResults: MulticallState['callResults'],
   listeningKeys: { [callKey: string]: number },
   chainId: number | undefined,
-  latestBlockNumber: number | undefined,
-  listenerOptions?: ListenerOptions
+  latestBlockNumber: number | undefined
 ): string[] {
   if (!chainId || !latestBlockNumber) return []
   const results = callResults[chainId]
@@ -131,7 +129,7 @@ export function outdatedListeningKeys(
   if (!results) return Object.keys(listeningKeys)
 
   return Object.keys(listeningKeys).filter((callKey) => {
-    const blocksPerFetch = !!listenerOptions?.blocksPerFetch ? listenerOptions.blocksPerFetch : listeningKeys[callKey]
+    const blocksPerFetch = listeningKeys[callKey]
 
     const data = callResults[chainId][callKey]
     // no data, must fetch
@@ -239,30 +237,26 @@ function Updater(props: UpdaterProps): null {
   const { context, chainId, latestBlockNumber, contract, isDebug, listenerOptions } = props
   const { actions, reducerPath } = context
   const dispatch = useDispatch()
+
+  // set user configured listenerOptions in state for given chain ID.
+  if (chainId && listenerOptions) dispatch(actions.updateListenerOptions({ chainId, listenerOptions }))
   const state = useSelector((state: WithMulticallState) => state[reducerPath])
+
   // wait for listeners to settle before triggering updates
   const debouncedListeners = useDebounce(state.callListeners, 100)
   const cancellations = useRef<{ blockNumber: number; cancellations: (() => void)[] }>()
 
   const listeningKeys: { [callKey: string]: number } = useMemo(() => {
-    return activeListeningKeys(debouncedListeners, chainId, listenerOptions)
-  }, [debouncedListeners, chainId, listenerOptions])
+    return activeListeningKeys(debouncedListeners, chainId)
+  }, [debouncedListeners, chainId])
 
   const serializedOutdatedCallKeys = useMemo(() => {
-    const outdatedCallKeys = outdatedListeningKeys(
-      state.callResults,
-      listeningKeys,
-      chainId,
-      latestBlockNumber,
-      listenerOptions
-    )
+    const outdatedCallKeys = outdatedListeningKeys(state.callResults, listeningKeys, chainId, latestBlockNumber)
     return JSON.stringify(outdatedCallKeys.sort())
-  }, [chainId, state.callResults, listeningKeys, latestBlockNumber, listenerOptions])
+  }, [chainId, state.callResults, listeningKeys, latestBlockNumber])
 
   useEffect(() => {
     if (!latestBlockNumber || !chainId || !contract) return
-
-    if (listenerOptions) dispatch(actions.updateDefaultListenerOptions({ chainId, listenerOptions }))
 
     const outdatedCallKeys: string[] = JSON.parse(serializedOutdatedCallKeys)
     if (outdatedCallKeys.length === 0) return
@@ -305,7 +299,7 @@ function Updater(props: UpdaterProps): null {
       blockNumber: latestBlockNumber,
       cancellations: newCancellations,
     }
-  }, [actions, chainId, contract, dispatch, serializedOutdatedCallKeys, latestBlockNumber, isDebug, listenerOptions])
+  }, [actions, chainId, contract, dispatch, serializedOutdatedCallKeys, latestBlockNumber, isDebug])
 
   return null
 }

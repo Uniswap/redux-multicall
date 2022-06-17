@@ -16,7 +16,7 @@ describe('multicall reducer', () => {
   it('has correct initial state', () => {
     expect(store.getState().callResults).toEqual({})
     expect(store.getState().callListeners).toBeUndefined()
-    expect(store.getState().defaultListenerOptions).toBeUndefined()
+    expect(store.getState().listenerOptions).toBeUndefined()
   })
 
   describe('addMulticallListeners', () => {
@@ -311,26 +311,26 @@ describe('multicall reducer', () => {
     })
   })
 
-  describe('updateDefaultListenerOptions', () => {
-    it('initializes defaultListenerOptions map in state if not present and updates', () => {
+  describe('updateListenerOptions', () => {
+    it('initializes listenerOptions map in state if not present and updates', () => {
       store.dispatch(
-        actions.updateDefaultListenerOptions({
+        actions.updateListenerOptions({
           chainId: 1,
           listenerOptions: {
             blocksPerFetch: 5,
           },
         })
       )
-      expect(store.getState().defaultListenerOptions).toEqual({
+      expect(store.getState().listenerOptions).toEqual({
         1: {
           blocksPerFetch: 5,
         },
       })
     })
 
-    it('updates defaultListenerOptions map when overriding with new values for multiple chain IDs', () => {
+    it('updates listenerOptions map when overriding with new values for multiple chain IDs', () => {
       store.dispatch(
-        actions.updateDefaultListenerOptions({
+        actions.updateListenerOptions({
           chainId: 1,
           listenerOptions: {
             blocksPerFetch: 5,
@@ -338,14 +338,14 @@ describe('multicall reducer', () => {
         })
       )
       store.dispatch(
-        actions.updateDefaultListenerOptions({
+        actions.updateListenerOptions({
           chainId: 2,
           listenerOptions: {
             blocksPerFetch: 10,
           },
         })
       )
-      expect(store.getState().defaultListenerOptions).toEqual({
+      expect(store.getState().listenerOptions).toEqual({
         1: {
           blocksPerFetch: 5,
         },
@@ -354,7 +354,7 @@ describe('multicall reducer', () => {
         },
       })
       store.dispatch(
-        actions.updateDefaultListenerOptions({
+        actions.updateListenerOptions({
           chainId: 1,
           listenerOptions: {
             blocksPerFetch: 1,
@@ -362,14 +362,14 @@ describe('multicall reducer', () => {
         })
       )
       store.dispatch(
-        actions.updateDefaultListenerOptions({
+        actions.updateListenerOptions({
           chainId: 2,
           listenerOptions: {
             blocksPerFetch: 100,
           },
         })
       )
-      expect(store.getState().defaultListenerOptions).toEqual({
+      expect(store.getState().listenerOptions).toEqual({
         1: {
           blocksPerFetch: 1,
         },

@@ -104,12 +104,10 @@ export function createMulticallSlice(reducerPath: string) {
         })
       },
 
-      updateDefaultListenerOptions: (state, action: PayloadAction<MulticallListenerOptionsPayload>) => {
+      updateListenerOptions: (state, action: PayloadAction<MulticallListenerOptionsPayload>) => {
         const { chainId, listenerOptions } = action.payload
-        const defaultListenerOptions: MulticallState['defaultListenerOptions'] = state.defaultListenerOptions
-          ? state.defaultListenerOptions
-          : (state.defaultListenerOptions = {})
-        defaultListenerOptions[chainId] = listenerOptions
+        state.listenerOptions = state.listenerOptions ?? {}
+        state.listenerOptions[chainId] = listenerOptions
       },
     },
   })

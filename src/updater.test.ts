@@ -164,16 +164,5 @@ describe('multicall updater', () => {
         )
       ).toEqual(['def'])
     })
-    it('respects blocks per fetch when set in listenerOptions', () => {
-      expect(
-        outdatedListeningKeys(
-          { [1]: { abc: { data: '0x', blockNumber: 2 }, def: { data: '0x', fetchingBlockNumber: 1 } } },
-          { abc: 2, def: 2 },
-          1,
-          3,
-          { blocksPerFetch: 1 }
-        )
-      ).toEqual(['abc', 'def'])
-    })
   })
 })

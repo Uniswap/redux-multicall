@@ -4,13 +4,12 @@ import { combineReducers, configureStore, Store } from '@reduxjs/toolkit'
 import React, { useRef } from 'react'
 import { render, unmountComponentAtNode } from 'react-dom'
 import { Provider } from 'react-redux'
-//import { renderHook } from '@testing-library/react-hooks'
 
 import { useCallsDataSubscription } from './hooks'
 import { createMulticallSlice, MulticallActions } from './slice'
 import { toCallKey } from './utils/callKeys'
 import { MulticallContext } from './context'
-import { Call } from './types'
+import { Call, ListenerOptions } from './types'
 
 describe('multicall hooks', () => {
   let container: HTMLDivElement | null = null
@@ -47,13 +46,13 @@ describe('multicall hooks', () => {
     function Caller({
       calls,
       multicallContext,
-      blocksPerFetch,
+      listenerOptions,
     }: {
       calls: Call[]
       multicallContext?: MulticallContext | any
-      blocksPerFetch?: number
+      listenerOptions?: ListenerOptions
     }) {
-      const data = useCallsDataSubscription(multicallContext ?? context, 1, calls, blocksPerFetch)
+      const data = useCallsDataSubscription(multicallContext ?? context, 1, calls, listenerOptions)
       return <>{calls.map((call, i) => `${toCallKey(call)}:${data[i].data}`).join(';')}</>
     }
 
@@ -138,13 +137,15 @@ describe('multicall hooks', () => {
     describe('utilizes correct blocksPerFetch values from defaultListenerOptions in store', () => {
       it('utilizes blocksPerFetch configured in defaultListenerOptions in store', () => {
         const callA = { address: 'a', callData: '' }
+        const chainId = 1
+        const blocksPerFetch = 10
         updateCallResult(callA, '0xa')
 
         store.dispatch(
-          actions.updateDefaultListenerOptions({
-            chainId: 1,
+          actions.updateListenerOptions({
+            chainId,
             listenerOptions: {
-              blocksPerFetch: 10,
+              blocksPerFetch,
             },
           })
         )
@@ -171,21 +172,23 @@ describe('multicall hooks', () => {
         })
 
         expect(mockContext.actions.addMulticallListeners).toHaveBeenCalledWith({
-          chainId: 1,
-          calls: [{ address: 'a', callData: '' }],
-          options: { blocksPerFetch: 10 },
+          chainId,
+          calls: [callA],
+          options: { blocksPerFetch },
         })
       })
 
       it('overrides blocksPerFetch configured in defaultListenerOptions in store when blocksPerFetch param is provided', () => {
         const callA = { address: 'a', callData: '' }
+        const chainId = 1
+        const blocksPerFetch = 10
         updateCallResult(callA, '0xa')
 
         store.dispatch(
-          actions.updateDefaultListenerOptions({
-            chainId: 1,
+          actions.updateListenerOptions({
+            chainId,
             listenerOptions: {
-              blocksPerFetch: 10,
+              blocksPerFetch,
             },
           })
         )
@@ -205,15 +208,15 @@ describe('multicall hooks', () => {
         act(() => {
           render(
             <Provider store={store}>
-              <Caller calls={[callA]} multicallContext={mockContext} blocksPerFetch={5} />
+              <Caller calls={[callA]} multicallContext={mockContext} listenerOptions={{ blocksPerFetch: 5 }} />
             </Provider>,
             container
           )
         })
 
         expect(mockContext.actions.addMulticallListeners).toHaveBeenCalledWith({
-          chainId: 1,
-          calls: [{ address: 'a', callData: '' }],
+          chainId,
+          calls: [callA],
           options: { blocksPerFetch: 5 },
         })
       })
@@ -245,7 +248,7 @@ describe('multicall hooks', () => {
 
         expect(mockContext.actions.addMulticallListeners).toHaveBeenCalledWith({
           chainId: 1,
-          calls: [{ address: 'a', callData: '' }],
+          calls: [callA],
           options: { blocksPerFetch: 1 },
         })
       })
