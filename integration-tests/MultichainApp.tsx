@@ -15,7 +15,7 @@ export function MultichainApp() {
   return (
     <Provider store={store}>
       <Updater chainId={ChainId.MAINNET} blockNumber={blockNumberMainnet} />
-      <Updater chainId={ChainId.RINKEBY} blockNumber={blockNumberRinkeby} />
+      <Updater chainId={ChainId.RINKEBY} blockNumber={blockNumberRinkeby} blocksPerFetch={5} />
       <Home chainIds={chains} blockNumbers={blocks} />
     </Provider>
   )

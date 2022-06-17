@@ -47,6 +47,10 @@ export interface MulticallState {
       }
     }
   }
+
+  listenerOptions?: {
+    [chainId: number]: ListenerOptions
+  }
 }
 
 export interface WithMulticallState {
@@ -80,4 +84,9 @@ export interface MulticallResultsPayload {
   results: {
     [callKey: string]: string | null
   }
+}
+
+export interface MulticallListenerOptionsPayload {
+  chainId: number
+  listenerOptions: ListenerOptions
 }

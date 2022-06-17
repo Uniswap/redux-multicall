@@ -4,7 +4,7 @@ import type { UniswapInterfaceMulticall } from './abi/types'
 import { CHUNK_GAS_LIMIT, DEFAULT_CALL_GAS_REQUIRED } from './constants'
 import type { MulticallContext } from './context'
 import type { MulticallActions } from './slice'
-import type { Call, MulticallState, WithMulticallState } from './types'
+import type { Call, MulticallState, WithMulticallState, ListenerOptions } from './types'
 import { parseCallKey, toCallKey } from './utils/callKeys'
 import chunkCalls from './utils/chunkCalls'
 import { retry, RetryableError } from './utils/retry'
@@ -230,13 +230,18 @@ export interface UpdaterProps {
   latestBlockNumber: number | undefined
   contract: UniswapInterfaceMulticall
   isDebug?: boolean
+  listenerOptions?: ListenerOptions
 }
 
 function Updater(props: UpdaterProps): null {
-  const { context, chainId, latestBlockNumber, contract, isDebug } = props
+  const { context, chainId, latestBlockNumber, contract, isDebug, listenerOptions } = props
   const { actions, reducerPath } = context
   const dispatch = useDispatch()
+
+  // set user configured listenerOptions in state for given chain ID.
+  if (chainId && listenerOptions) dispatch(actions.updateListenerOptions({ chainId, listenerOptions }))
   const state = useSelector((state: WithMulticallState) => state[reducerPath])
+
   // wait for listeners to settle before triggering updates
   const debouncedListeners = useDebounce(state.callListeners, 100)
   const cancellations = useRef<{ blockNumber: number; cancellations: (() => void)[] }>()

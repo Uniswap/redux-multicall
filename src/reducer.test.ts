@@ -15,7 +15,8 @@ describe('multicall reducer', () => {
 
   it('has correct initial state', () => {
     expect(store.getState().callResults).toEqual({})
-    expect(store.getState().callListeners).toEqual(undefined)
+    expect(store.getState().callListeners).toBeUndefined()
+    expect(store.getState().listenerOptions).toBeUndefined()
   })
 
   describe('addMulticallListeners', () => {
@@ -305,6 +306,75 @@ describe('multicall reducer', () => {
           [1]: {
             [`${DAI_ADDRESS}-0x0`]: { fetchingBlockNumber: 3 },
           },
+        },
+      })
+    })
+  })
+
+  describe('updateListenerOptions', () => {
+    it('initializes listenerOptions map in state if not present and updates', () => {
+      store.dispatch(
+        actions.updateListenerOptions({
+          chainId: 1,
+          listenerOptions: {
+            blocksPerFetch: 5,
+          },
+        })
+      )
+      expect(store.getState().listenerOptions).toEqual({
+        1: {
+          blocksPerFetch: 5,
+        },
+      })
+    })
+
+    it('updates listenerOptions map when overriding with new values for multiple chain IDs', () => {
+      store.dispatch(
+        actions.updateListenerOptions({
+          chainId: 1,
+          listenerOptions: {
+            blocksPerFetch: 5,
+          },
+        })
+      )
+      store.dispatch(
+        actions.updateListenerOptions({
+          chainId: 2,
+          listenerOptions: {
+            blocksPerFetch: 10,
+          },
+        })
+      )
+      expect(store.getState().listenerOptions).toEqual({
+        1: {
+          blocksPerFetch: 5,
+        },
+        2: {
+          blocksPerFetch: 10,
+        },
+      })
+      store.dispatch(
+        actions.updateListenerOptions({
+          chainId: 1,
+          listenerOptions: {
+            blocksPerFetch: 1,
+          },
+        })
+      )
+      store.dispatch(
+        actions.updateListenerOptions({
+          chainId: 2,
+          listenerOptions: {
+            blocksPerFetch: 100,
+          },
+        })
+      )
+      expect(store.getState().listenerOptions).toEqual({
+        1: {
+          blocksPerFetch: 1,
+        },
+        2: {
+          blocksPerFetch: 100,
         },
       })
     })

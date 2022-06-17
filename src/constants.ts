@@ -1,5 +1,6 @@
 import type { CallResult, CallState, ListenerOptions } from './types'
 
+export const DEFAULT_BLOCKS_PER_FETCH = 1
 export const DEFAULT_CALL_GAS_REQUIRED = 1_000_000
 export const DEFAULT_CHUNK_GAS_REQUIRED = 200_000
 export const CHUNK_GAS_LIMIT = 100_000_000
