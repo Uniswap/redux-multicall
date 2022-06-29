@@ -165,7 +165,7 @@ export function useSingleContractMultipleData(
   contract: Contract | null | undefined,
   methodName: string,
   callInputs: OptionalMethodInputs[],
-  options: Partial<ListenerOptionsWithGas> | undefined
+  options?: Partial<ListenerOptionsWithGas>
 ): CallState[] {
   const { gasRequired } = options ?? {}
 
