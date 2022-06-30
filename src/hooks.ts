@@ -80,7 +80,7 @@ export function useCallsDataSubscription(
 function areCallResultsEqual(a: CallResult[], b: CallResult[]) {
   if (a.length !== b.length) return false
   return a.every(
-    (_, i) => a[i] === b[i] || (a[i] && b[i] && a[i].valid === b[i].valid && a[i].data === b[i].data && a[i].blockNumber === b[i].blockNumber)
+    (_, i) => a[i].valid === b[i].valid && a[i].data === b[i].data && a[i].blockNumber === b[i].blockNumber
   )
 }
 
