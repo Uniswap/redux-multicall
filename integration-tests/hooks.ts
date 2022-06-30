@@ -69,7 +69,7 @@ export function useCurrentBlockTimestampMultichain(
 
 export function useMaxTokenBalance(chainId: ChainId, blockNumber: number | undefined): string | undefined {
   const { contracts, accounts } = useMemo(
-    () => ({ contracts: [USDC_ADDRESS, USDT_ADDRESS], accounts: [NULL_ADDRESS] }),
+    () => ({ contracts: [, USDC_ADDRESS, USDT_ADDRESS], accounts: [NULL_ADDRESS] }),
     []
   )
   const results = useMultipleContractSingleData(chainId, blockNumber, contracts, ERC20Interface, 'balanceOf', accounts)
