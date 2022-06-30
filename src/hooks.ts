@@ -218,7 +218,7 @@ export function useMultipleContractSingleData(
   // Create call objects
   const calls = useMemo(() => {
     if (!callData) return []
-    return addresses.map<Call | undefined>((address) => {
+    return [...addresses].map<Call | undefined>((address) => {
       if (!address) return undefined
       return { address, callData, gasRequired }
     })
@@ -303,7 +303,7 @@ export function useMultiChainMultiContractSingleData(
     if (!callData || !chainToAddresses) return {}
     return getChainIds(chainToAddresses).reduce((result, chainId) => {
       const addresses = chainToAddresses[chainId]
-      const calls = addresses.map<Call | undefined>((address) => {
+      const calls = [...addresses].map<Call | undefined>((address) => {
         if (!address) return undefined
         return { address, callData, gasRequired }
       })
