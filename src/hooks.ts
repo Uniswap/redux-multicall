@@ -52,16 +52,24 @@ export function useCallsDataSubscription(
     }
   }, [actions, chainId, dispatch, listenerOptions, serializedCallKeys, defaultListenerOptions])
 
-  // ensure that call results arrays remain referentially equivalent when unchanged to prevent
-  // spurious re-renders, which would otherwise occur because mapping always creates a new object
+  // Ensure that call results arrays remain referentially equivalent when unchanged to prevent
+  // spurious re-renders, which would otherwise occur because mapping always creates a new object.
   const stableResults = useRef<CallResult[]>([])
   return useMemo(() => {
-    const results = calls.map<CallResult>((call) => {
-      if (!chainId || !call) return INVALID_RESULT
+    // Construct results using a for-loop to handle sparse arrays.
+    // Array.prototype.map would skip empty entries.
+    let results: CallResult[] = []
+    for (let i = 0; i < calls.length; ++i) {
+      const call = calls[i]
+      if (!chainId || !call) {
+        results.push(INVALID_RESULT)
+        continue
+      }
       const result = callResults[chainId]?.[toCallKey(call)]
       const data = result?.data && result.data !== '0x' ? result.data : undefined
-      return { valid: true, data, blockNumber: result?.blockNumber }
-    })
+      results.push({ valid: true, data, blockNumber: result?.blockNumber })
+    }
+
     if (!areCallResultsEqual(results, stableResults.current)) {
       stableResults.current = results
     }
@@ -72,7 +80,7 @@ export function useCallsDataSubscription(
 function areCallResultsEqual(a: CallResult[], b: CallResult[]) {
   if (a.length !== b.length) return false
   return a.every(
-    (_, i) => a[i].valid === b[i].valid && a[i].data === b[i].data && a[i].blockNumber === b[i].blockNumber
+    (_, i) => a[i] === b[i] || (a[i] && b[i] && a[i].valid === b[i].valid && a[i].data === b[i].data && a[i].blockNumber === b[i].blockNumber)
   )
 }
 
@@ -218,7 +226,7 @@ export function useMultipleContractSingleData(
   // Create call objects
   const calls = useMemo(() => {
     if (!callData) return []
-    return [...addresses].map<Call | undefined>((address) => {
+    return addresses.map<Call | undefined>((address) => {
       if (!address) return undefined
       return { address, callData, gasRequired }
     })
@@ -303,7 +311,7 @@ export function useMultiChainMultiContractSingleData(
     if (!callData || !chainToAddresses) return {}
     return getChainIds(chainToAddresses).reduce((result, chainId) => {
       const addresses = chainToAddresses[chainId]
-      const calls = [...addresses].map<Call | undefined>((address) => {
+      const calls = addresses.map<Call | undefined>((address) => {
         if (!address) return undefined
         return { address, callData, gasRequired }
       })
