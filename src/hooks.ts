@@ -52,16 +52,24 @@ export function useCallsDataSubscription(
     }
   }, [actions, chainId, dispatch, listenerOptions, serializedCallKeys, defaultListenerOptions])
 
-  // ensure that call results arrays remain referentially equivalent when unchanged to prevent
-  // spurious re-renders, which would otherwise occur because mapping always creates a new object
+  // Ensure that call results arrays remain referentially equivalent when unchanged to prevent
+  // spurious re-renders, which would otherwise occur because mapping always creates a new object.
   const stableResults = useRef<CallResult[]>([])
   return useMemo(() => {
-    const results = calls.map<CallResult>((call) => {
-      if (!chainId || !call) return INVALID_RESULT
+    // Construct results using a for-loop to handle sparse arrays.
+    // Array.prototype.map would skip empty entries.
+    let results: CallResult[] = []
+    for (let i = 0; i < calls.length; ++i) {
+      const call = calls[i]
+      if (!chainId || !call) {
+        results.push(INVALID_RESULT)
+        continue
+      }
       const result = callResults[chainId]?.[toCallKey(call)]
       const data = result?.data && result.data !== '0x' ? result.data : undefined
-      return { valid: true, data, blockNumber: result?.blockNumber }
-    })
+      results.push({ valid: true, data, blockNumber: result?.blockNumber })
+    }
+
     if (!areCallResultsEqual(results, stableResults.current)) {
       stableResults.current = results
     }

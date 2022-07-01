@@ -6,7 +6,7 @@ import { InfuraProvider, JsonRpcProvider } from '@ethersproject/providers'
 import { Interface } from '@ethersproject/abi'
 import { useEffect, useMemo, useState } from 'react'
 import { UniswapInterfaceMulticall } from '../src/abi/types'
-import { ChainId, MULTICALL_ADDRESS, NULL_ADDRESS, USDC_ADDRESS, USDT_ADDRESS } from './consts'
+import { ChainId, DAI_ADDRESS, MULTICALL_ADDRESS, NULL_ADDRESS, USDC_ADDRESS, USDT_ADDRESS } from './consts'
 import ERC20_ABI from './erc20.json'
 import { useMultiChainSingleContractSingleData, useMultipleContractSingleData, useSingleCallResult } from './multicall'
 
@@ -69,7 +69,11 @@ export function useCurrentBlockTimestampMultichain(
 
 export function useMaxTokenBalance(chainId: ChainId, blockNumber: number | undefined): string | undefined {
   const { contracts, accounts } = useMemo(
-    () => ({ contracts: [USDC_ADDRESS, USDT_ADDRESS], accounts: [NULL_ADDRESS] }),
+    () => ({
+      // The first element is intentionally empty to test sparse arrays; see https://github.com/Uniswap/redux-multicall/pull/21.
+      contracts: [, USDC_ADDRESS, USDT_ADDRESS, DAI_ADDRESS],
+      accounts: [NULL_ADDRESS],
+    }),
     []
   )
   const results = useMultipleContractSingleData(chainId, blockNumber, contracts, ERC20Interface, 'balanceOf', accounts)
