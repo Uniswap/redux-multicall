@@ -4,7 +4,7 @@ A React + Redux library for fetching, batching, and caching chain state via the 
 
 ## Setup
 
-`yarn add @uniswap/multicall` or `npm install @uniswap/multicall`
+`yarn add @uniswap/redux-multicall` or `npm install @uniswap/redux-multicall`
 
 ## Usage
 
