@@ -69,7 +69,11 @@ export function useCurrentBlockTimestampMultichain(
 
 export function useMaxTokenBalance(chainId: ChainId, blockNumber: number | undefined): string | undefined {
   const { contracts, accounts } = useMemo(
-    () => ({ contracts: [, USDC_ADDRESS, USDT_ADDRESS, DAI_ADDRESS], accounts: [NULL_ADDRESS] }),
+    () => ({
+      // The first element is intentionally empty to test sparse arrays; see https://github.com/Uniswap/redux-multicall/pull/21.
+      contracts: [, USDC_ADDRESS, USDT_ADDRESS, DAI_ADDRESS],
+      accounts: [NULL_ADDRESS],
+    }),
     []
   )
   const results = useMultipleContractSingleData(chainId, blockNumber, contracts, ERC20Interface, 'balanceOf', accounts)
