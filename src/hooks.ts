@@ -249,8 +249,9 @@ export function useSingleCallResult(
   inputs?: OptionalMethodInputs,
   options?: Partial<ListenerOptionsWithGas>
 ): CallState {
+  const callInputs = useMemo(() => [inputs], [inputs])
   return (
-    useSingleContractMultipleData(context, chainId, latestBlockNumber, contract, methodName, [inputs], options)[0] ??
+    useSingleContractMultipleData(context, chainId, latestBlockNumber, contract, methodName, callInputs, options)[0] ??
     INVALID_CALL_STATE
   )
 }
