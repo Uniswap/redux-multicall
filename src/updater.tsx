@@ -243,7 +243,7 @@ function Updater(props: UpdaterProps): null {
     if (chainId && listenerOptions) {
       dispatch(actions.updateListenerOptions({ chainId, listenerOptions }))
     }
-  },  [chainId, listenerOptions])
+  }, [chainId, listenerOptions, actions, dispatch])
 
   const state = useSelector((state: WithMulticallState) => state[reducerPath])
 
