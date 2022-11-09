@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom'
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import { BigNumber } from '@ethersproject/bignumber'
 import React from 'react'
 import { App } from './App'
@@ -27,7 +27,7 @@ describe('Use multicall in test application', () => {
     expect(now1 - value1).toBeLessThan(MAX_BLOCK_AGE)
 
     // Wait for an updated block timestamp
-    await sleep(12_000)
+    await act(() => sleep(12_000))
 
     // Check that the block timestamp has updated correctly
     const timestamp2 = await waitFor(() => screen.getByTestId('blockTimestamp'), { timeout: 1_000 })
