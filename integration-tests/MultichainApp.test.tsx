@@ -8,12 +8,6 @@ import { sleep } from './utils'
 const MAX_BLOCK_AGE = 600_000 // 10 minutes
 
 describe('Use multicall in test multichain application', () => {
-  beforeAll(() => {
-    if (!process.env.INFURA_PROJECT_ID) {
-      throw new Error('Test requires INFURA_PROJECT_ID env var to be set')
-    }
-  })
-
   it('Renders correctly initially', () => {
     act(() => {
       render(<MultichainApp />)

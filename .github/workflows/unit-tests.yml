@@ -1,14 +1,16 @@
-name: Unit Tests
+name: Tests
 
 on:
   push:
     branches:
       - main
   pull_request:
+  # manual trigger
+  workflow_dispatch:
 
 jobs:
   tests:
-    name: Unit tests
+    name: Tests
 
     runs-on: ubuntu-latest
 

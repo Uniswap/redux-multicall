@@ -7,15 +7,15 @@ import { Updater } from './Updater'
 
 export function MultichainApp() {
   const providerMainnet = getProvider(ChainId.MAINNET)
-  const providerRinkeby = getProvider(ChainId.RINKEBY)
+  const providerGoerli = getProvider(ChainId.GOERLI)
   const blockNumberMainnet = useLatestBlock(providerMainnet)
-  const blockNumberRinkeby = useLatestBlock(providerRinkeby)
-  const chains = useMemo(() => [ChainId.MAINNET, ChainId.RINKEBY], [])
-  const blocks = useMemo(() => [blockNumberMainnet, blockNumberRinkeby], [blockNumberMainnet, blockNumberRinkeby])
+  const blockNumberGoerli = useLatestBlock(providerGoerli)
+  const chains = useMemo(() => [ChainId.MAINNET, ChainId.GOERLI], [])
+  const blocks = useMemo(() => [blockNumberMainnet, blockNumberGoerli], [blockNumberMainnet, blockNumberGoerli])
   return (
     <Provider store={store}>
       <Updater chainId={ChainId.MAINNET} blockNumber={blockNumberMainnet} />
-      <Updater chainId={ChainId.RINKEBY} blockNumber={blockNumberRinkeby} blocksPerFetch={5} />
+      <Updater chainId={ChainId.GOERLI} blockNumber={blockNumberGoerli} blocksPerFetch={5} />
       <Home chainIds={chains} blockNumbers={blocks} />
     </Provider>
   )

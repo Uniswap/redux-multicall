@@ -6,8 +6,5 @@ export const USDT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
 
 export enum ChainId {
   MAINNET = 1,
-  ROPSTEN = 3,
-  RINKEBY = 4,
   GOERLI = 5,
-  KOVAN = 42,
 }
