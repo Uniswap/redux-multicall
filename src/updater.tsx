@@ -239,7 +239,12 @@ function Updater(props: UpdaterProps): null {
   const dispatch = useDispatch()
 
   // set user configured listenerOptions in state for given chain ID.
-  if (chainId && listenerOptions) dispatch(actions.updateListenerOptions({ chainId, listenerOptions }))
+  useEffect(() => {
+    if (chainId && listenerOptions) {
+      dispatch(actions.updateListenerOptions({ chainId, listenerOptions }))
+    }
+  }, [chainId, listenerOptions, actions, dispatch])
+
   const state = useSelector((state: WithMulticallState) => state[reducerPath])
 
   // wait for listeners to settle before triggering updates
