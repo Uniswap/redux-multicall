@@ -1,12 +1,12 @@
 import { Contract } from '@ethersproject/contracts'
 import { Interface } from '@ethersproject/abi'
-import { useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { batch, useDispatch, useSelector } from 'react-redux'
 import { INVALID_CALL_STATE, INVALID_RESULT, DEFAULT_BLOCKS_PER_FETCH } from './constants'
 import type { MulticallContext } from './context'
 import type { Call, CallResult, CallState, ListenerOptions, ListenerOptionsWithGas, WithMulticallState } from './types'
 import { callKeysToCalls, callsToCallKeys, toCallKey } from './utils/callKeys'
-import { toCallState } from './utils/callState'
+import { toCallState, useStableCallStates } from './utils/callState'
 import { isValidMethodArgs, MethodArg } from './validation'
 
 type OptionalMethodInputs = Array<MethodArg | MethodArg[] | undefined> | undefined
@@ -52,9 +52,6 @@ export function useCallsDataSubscription(
     }
   }, [actions, chainId, dispatch, listenerOptions, serializedCallKeys, defaultListenerOptions])
 
-  // Ensure that call results arrays remain referentially equivalent when unchanged to prevent
-  // spurious re-renders, which would otherwise occur because mapping always creates a new object.
-  const stableResults = useRef<CallResult[]>([])
   return useMemo(() => {
     // Construct results using a for-loop to handle sparse arrays.
     // Array.prototype.map would skip empty entries.
@@ -69,19 +66,8 @@ export function useCallsDataSubscription(
       const data = result?.data && result.data !== '0x' ? result.data : undefined
       results.push({ valid: true, data, blockNumber: result?.blockNumber })
     }
-
-    if (!areCallResultsEqual(results, stableResults.current)) {
-      stableResults.current = results
-    }
-    return stableResults.current
+    return results
   }, [callResults, calls, chainId])
-}
-
-function areCallResultsEqual(a: CallResult[], b: CallResult[]) {
-  if (a.length !== b.length) return false
-  return a.every(
-    (_, i) => a[i].valid === b[i].valid && a[i].data === b[i].data && a[i].blockNumber === b[i].blockNumber
-  )
 }
 
 // Similar to useCallsDataSubscription above but for subscribing to
@@ -203,10 +189,7 @@ export function useSingleContractMultipleData(
 
   // Subscribe to call data
   const results = useCallsDataSubscription(context, chainId, calls, options as ListenerOptions)
-
-  return useMemo(() => {
-    return results.map((result) => toCallState(result, contract?.interface, fragment, latestBlockNumber))
-  }, [results, contract, fragment, latestBlockNumber])
+  return useStableCallStates(results, contract?.interface, fragment, latestBlockNumber)
 }
 
 export function useMultipleContractSingleData(
@@ -234,10 +217,7 @@ export function useMultipleContractSingleData(
 
   // Subscribe to call data
   const results = useCallsDataSubscription(context, chainId, calls, options as ListenerOptions)
-
-  return useMemo(() => {
-    return results.map((result) => toCallState(result, contractInterface, fragment, latestBlockNumber))
-  }, [fragment, results, contractInterface, latestBlockNumber])
+  return useStableCallStates(results, contractInterface, fragment, latestBlockNumber)
 }
 
 export function useSingleCallResult(
@@ -275,21 +255,15 @@ export function useSingleContractWithCallData(
       callData,
       gasRequired,
     }))
-  }, [contract, callDatas, gasRequired])
+  }, [callDatas, contract, gasRequired])
 
   // Subscribe to call data
   const results = useCallsDataSubscription(context, chainId, calls, options as ListenerOptions)
-
-  return useMemo(() => {
-    return results.map((result, i) =>
-      toCallState(
-        result,
-        contract?.interface,
-        contract?.interface?.getFunction(callDatas[i].substring(0, 10)),
-        latestBlockNumber
-      )
-    )
-  }, [results, contract, callDatas, latestBlockNumber])
+  const fragment = useCallback(
+    (i: number) => contract?.interface?.getFunction(callDatas[i].substring(0, 10)),
+    [callDatas, contract]
+  )
+  return useStableCallStates(results, contract?.interface, fragment, latestBlockNumber)
 }
 
 // Similar to useMultipleContractSingleData but instead of multiple contracts on one chain,
@@ -324,6 +298,8 @@ export function useMultiChainMultiContractSingleData(
   // Subscribe to call data
   const chainIdToResults = useMultichainCallsDataSubscription(context, chainToCalls, options as ListenerOptions)
 
+  // TODO(WEB-2097): Multichain states are not referentially stable, because they cannot use the
+  // same codepath (eg useStableCallStates).
   return useMemo(() => {
     return getChainIds(chainIdToResults).reduce((combinedResults, chainId) => {
       const latestBlockNumber = chainToBlockNumber?.[chainId]
