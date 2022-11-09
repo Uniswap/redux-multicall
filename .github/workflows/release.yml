@@ -8,32 +8,24 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Set up node
-        uses: actions/setup-node@v2
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
         with:
           node-version: 14
           registry-url: https://registry.npmjs.org
 
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
+      - run: yarn install --frozen-lockfile
+      - run: yarn postinstall
+      - run: yarn build
 
-      - name: Unit tests
-        run: yarn test
+      - run: yarn test
         env:
           INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
           INFURA_PROJECT_SECRET: ${{ secrets.INFURA_PROJECT_SECRET }}
-        
-      - name: Integration tests
-        run: yarn test:e2e
+      - run: yarn test:e2e
         env:
           INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
           INFURA_PROJECT_SECRET: ${{ secrets.INFURA_PROJECT_SECRET }}
-        
-      - name: Build
-        run: yarn build
 
       - run: yarn release
         env:
