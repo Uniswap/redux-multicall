@@ -157,8 +157,8 @@ describe('multicall updater', () => {
     it('respects blocks per fetch', () => {
       expect(
         outdatedListeningKeys(
-          { [1]: { abc: { data: '0x', blockNumber: 2 }, def: { data: '0x', fetchingBlockNumber: 1 } } },
-          { abc: 2, def: 2 },
+          { [1]: { abc: { data: '0x', blockNumber: 2 }, def: { data: '0x', fetchingBlockNumber: 1 }, ghi: { data: '0x', blockNumber: 1 } } },
+          { abc: 2, def: 2, ghi: Infinity },
           1,
           3
         )
