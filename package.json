@@ -18,11 +18,12 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsdx build",
-    "test": "tsdx test --runInBand",
+    "contracts:compile": "typechain --target ethers-v5 --out-dir src/abi/types './node_modules/@uniswap/v3-periphery/artifacts/contracts/**/*Multicall*.json'",
+    "postinstall": "yarn contracts:compile",
     "lint": "tsdx lint",
-    "prepublishOnly": "tsdx build",
-    "contracts:compile": "typechain --target ethers-v5 --out-dir src/abi/types './node_modules/@uniswap/v3-periphery/artifacts/contracts/**/*Multicall*.json'"
+    "test": "tsdx test --runInBand",
+    "build": "tsdx build",
+    "prepublishOnly": "tsdx build"
   },
   "devDependencies": {
     "@ethersproject/abi": "5",
@@ -37,6 +38,7 @@
     "@types/react": "^17.0.28",
     "@types/react-dom": "^17.0.14",
     "@uniswap/v3-periphery": "^1.3.0",
+    "dotenv": "^16.0.3",
     "eslint-plugin-prettier": "3.4.1",
     "ethers": "^5.4.7",
     "prettier": "^2.4.1",

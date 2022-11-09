@@ -4,11 +4,19 @@ import { BigNumber } from '@ethersproject/bignumber'
 import { Contract } from '@ethersproject/contracts'
 import { InfuraProvider, JsonRpcProvider } from '@ethersproject/providers'
 import { Interface } from '@ethersproject/abi'
+import { config } from 'dotenv'
 import { useEffect, useMemo, useState } from 'react'
+
 import { UniswapInterfaceMulticall } from '../src/abi/types'
 import { ChainId, DAI_ADDRESS, MULTICALL_ADDRESS, NULL_ADDRESS, USDC_ADDRESS, USDT_ADDRESS } from './consts'
 import ERC20_ABI from './erc20.json'
 import { useMultiChainSingleContractSingleData, useMultipleContractSingleData, useSingleCallResult } from './multicall'
+
+config()
+if (!process.env.INFURA_PROJECT_ID) throw new Error('Tests require process.env.INFURA_PROJECT_ID')
+const projectId = process.env.INFURA_PROJECT_ID
+const projectSecret = process.env.INFURA_PROJECT_SECRET
+const project = projectSecret ? { projectId, projectSecret } : projectId
 
 const providerCache: Partial<Record<ChainId, JsonRpcProvider>> = {}
 const MulticallInterface = new Interface(MulticallABI)
@@ -89,10 +97,6 @@ export function useMaxTokenBalance(chainId: ChainId, blockNumber: number | undef
 export function getProvider(chainId: ChainId) {
   if (providerCache[chainId]) return providerCache[chainId]!
   const name = getInfuraChainName(chainId)
-  const projectId = process.env.INFURA_PROJECT_ID
-  if (!projectId) throw new Error('INFURA_PROJECT_ID is required for provider')
-  const projectSecret = process.env.INFURA_PROJECT_SECRET
-  const project = projectSecret ? { projectId, projectSecret } : projectId
   providerCache[chainId] = new InfuraProvider(name, project)
   providerCache[chainId]?.once('error', (e) => {
     throw e
@@ -104,14 +108,8 @@ export function getInfuraChainName(chainId: ChainId) {
   switch (chainId) {
     case ChainId.MAINNET:
       return 'homestead'
-    case ChainId.RINKEBY:
-      return 'rinkeby'
-    case ChainId.ROPSTEN:
-      return 'ropsten'
     case ChainId.GOERLI:
       return 'goerli'
-    case ChainId.KOVAN:
-      return 'kovan'
     default:
       throw new Error(`Unsupported eth infura chainId for ${chainId}`)
   }

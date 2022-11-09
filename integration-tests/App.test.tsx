@@ -8,12 +8,6 @@ import { sleep } from './utils'
 const MAX_BLOCK_AGE = 600_000 // 10 minutes
 
 describe('Use multicall in test application', () => {
-  beforeAll(() => {
-    if (!process.env.INFURA_PROJECT_ID) {
-      throw new Error('Test requires INFURA_PROJECT_ID env var to be set')
-    }
-  })
-
   it('Renders correctly initially', () => {
     render(<App />)
     const h1 = screen.getByText('Hello Multicall') // H1 in Home
