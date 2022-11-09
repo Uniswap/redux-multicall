@@ -1,11 +1,11 @@
-name: Publish
+name: Release
 on:
   # manual trigger
   workflow_dispatch:
 
 jobs:
   deploy:
-    name: Publish
+    name: Release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -20,22 +20,23 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Compile contracts
-        run: yarn contracts:compile
-
-      - name: Linters pass
-        run: yarn lint
-
-      - name: Tests pass
+      - name: Unit tests
         run: yarn test
         env:
           INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
           INFURA_PROJECT_SECRET: ${{ secrets.INFURA_PROJECT_SECRET }}
         
-      - name: Build source
+      - name: Integration tests
+        run: yarn test:e2e
+        env:
+          INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
+          INFURA_PROJECT_SECRET: ${{ secrets.INFURA_PROJECT_SECRET }}
+        
+      - name: Build
         run: yarn build
 
-      - name: Publish to NPM
-        uses: JS-DevTools/npm-publish@v1
-        with:
-          token: ${{ secrets.NPM_TOKEN }}
+      - run: yarn release
+        env:
+          NPM_CONFIG_USERCONFIG: /dev/null
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

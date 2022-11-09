@@ -27,14 +27,17 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Compile contracts
-        run: yarn contracts:compile
-
-      - name: Run tests
+      - name: Unit tests
         run: yarn test
         env:
           INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
           INFURA_PROJECT_SECRET: ${{ secrets.INFURA_PROJECT_SECRET }}
         
-      - name: Run Build
+      - name: Integration tests
+        run: yarn test:e2e
+        env:
+          INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
+          INFURA_PROJECT_SECRET: ${{ secrets.INFURA_PROJECT_SECRET }}
+        
+      - name: Build
         run: yarn build
