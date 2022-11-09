@@ -20,7 +20,7 @@
   "scripts": {
     "contracts:compile": "typechain --target ethers-v5 --out-dir src/abi/types './node_modules/@uniswap/v3-periphery/artifacts/contracts/**/*Multicall*.json'",
     "postinstall": "yarn contracts:compile",
-    "lint": "tsdx lint",
+    "lint": "tsdx lint .",
     "test": "tsdx test src",
     "test:e2e": "tsdx test integration-tests",
     "build": "tsdx build",

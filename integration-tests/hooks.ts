@@ -25,7 +25,7 @@ const ERC20Interface = new Interface(ERC20_ABI)
 export function useContract(chainId: ChainId) {
   return useMemo(() => {
     return new Contract(MULTICALL_ADDRESS, MulticallABI, getProvider(chainId)) as UniswapInterfaceMulticall
-  }, [])
+  }, [chainId])
 }
 
 export function useLatestBlock(provider: JsonRpcProvider) {
@@ -63,7 +63,7 @@ export function useCurrentBlockTimestampMultichain(
       result[chainId] = MULTICALL_ADDRESS
       return result
     }, {} as Record<number, string>)
-  }, [])
+  }, [chainIds])
 
   const chainToCallState = useMultiChainSingleContractSingleData(
     chainToBlock,
@@ -79,6 +79,7 @@ export function useMaxTokenBalance(chainId: ChainId, blockNumber: number | undef
   const { contracts, accounts } = useMemo(
     () => ({
       // The first element is intentionally empty to test sparse arrays; see https://github.com/Uniswap/redux-multicall/pull/21.
+      // eslint-disable-next-line no-sparse-arrays
       contracts: [, USDC_ADDRESS, USDT_ADDRESS, DAI_ADDRESS],
       accounts: [NULL_ADDRESS],
     }),
