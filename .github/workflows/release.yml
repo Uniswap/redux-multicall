@@ -18,6 +18,8 @@ jobs:
 
       - run: yarn release
         env:
-          NPM_CONFIG_USERCONFIG: /dev/null
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
+          INFURA_PROJECT_SECRET: ${{ secrets.INFURA_PROJECT_SECRET }}
+          NPM_CONFIG_USERCONFIG: /dev/null
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
