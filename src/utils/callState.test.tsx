@@ -1,10 +1,10 @@
 import { FunctionFragment, Interface } from '@ethersproject/abi'
 import React, { useRef } from 'react'
 import { render, unmountComponentAtNode } from 'react-dom'
-import { toCallState, useStableCallStates } from './callState'
+import { toCallState, useCallStates } from './callState'
 
 describe('callState', () => {
-  describe('#useStableCallStates', () => {
+  describe('#useCallStates', () => {
     let container: HTMLDivElement | null = null
     beforeEach(() => {
       container = document.createElement('div')
@@ -18,18 +18,25 @@ describe('callState', () => {
       container = null
     })
 
-    function Caller({ result }: { result: any }) {
-      const contractInterface = { decodeFunctionResult: () => result } as unknown as Interface
-      const fragment = {} as FunctionFragment
-      const data = useStableCallStates([{ valid: true, data: '0xa', blockNumber: 1 }], contractInterface, fragment, 1)
+    const contractInterface = { decodeFunctionResult: () => [{}] } as unknown as Interface
+    const fragment = {} as FunctionFragment
+    const results = [{ valid: true, data: '0xa', blockNumber: 2 }]
+    function Caller({ latestBlockNumber }: { latestBlockNumber: number }) {
+      const data = useCallStates(results, contractInterface, fragment, latestBlockNumber)
       const last = useRef(data)
       return <>{data[0].result === last.current[0].result ? 'true' : 'false'}</>
     }
 
-    it('Stabilizes values across renders', () => {
-      render(<Caller result={[{}]} />, container)
-      render(<Caller result={[{}]} />, container)
+    it('Stabilizes values across renders (assuming stable interface/fragment/results)', () => {
+      render(<Caller latestBlockNumber={1} />, container)
+      render(<Caller latestBlockNumber={2} />, container)
       expect(container?.textContent).toBe('true')
+    })
+
+    it('Returns referentially new values if data goes stale', () => {
+      render(<Caller latestBlockNumber={2} />, container)
+      render(<Caller latestBlockNumber={3} />, container)
+      expect(container?.textContent).toBe('false')
     })
   })
 

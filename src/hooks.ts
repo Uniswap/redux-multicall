@@ -6,7 +6,7 @@ import { INVALID_CALL_STATE, INVALID_RESULT, DEFAULT_BLOCKS_PER_FETCH } from './
 import type { MulticallContext } from './context'
 import type { Call, CallResult, CallState, ListenerOptions, ListenerOptionsWithGas, WithMulticallState } from './types'
 import { callKeysToCalls, callsToCallKeys, toCallKey } from './utils/callKeys'
-import { toCallState, useStableCallStates } from './utils/callState'
+import { toCallState, useCallStates } from './utils/callState'
 import { isValidMethodArgs, MethodArg } from './validation'
 
 type OptionalMethodInputs = Array<MethodArg | MethodArg[] | undefined> | undefined
@@ -83,7 +83,9 @@ export function useCallsDataSubscription(
 
 function areCallResultsEqual(a: CallResult[], b: CallResult[]) {
   if (a.length !== b.length) return false
-  return a.every((_, i) => a[i].valid === b[i].valid && a[i].data === b[i].data && a[i].blockNumber === b[i].blockNumber)
+  return a.every(
+    (_, i) => a[i].valid === b[i].valid && a[i].data === b[i].data && a[i].blockNumber === b[i].blockNumber
+  )
 }
 
 // Similar to useCallsDataSubscription above but for subscribing to
@@ -205,7 +207,7 @@ export function useSingleContractMultipleData(
 
   // Subscribe to call data
   const results = useCallsDataSubscription(context, chainId, calls, options as ListenerOptions)
-  return useStableCallStates(results, contract?.interface, fragment, latestBlockNumber)
+  return useCallStates(results, contract?.interface, fragment, latestBlockNumber)
 }
 
 export function useMultipleContractSingleData(
@@ -233,7 +235,7 @@ export function useMultipleContractSingleData(
 
   // Subscribe to call data
   const results = useCallsDataSubscription(context, chainId, calls, options as ListenerOptions)
-  return useStableCallStates(results, contractInterface, fragment, latestBlockNumber)
+  return useCallStates(results, contractInterface, fragment, latestBlockNumber)
 }
 
 export function useSingleCallResult(
@@ -279,7 +281,7 @@ export function useSingleContractWithCallData(
     (i: number) => contract?.interface?.getFunction(callDatas[i].substring(0, 10)),
     [callDatas, contract]
   )
-  return useStableCallStates(results, contract?.interface, fragment, latestBlockNumber)
+  return useCallStates(results, contract?.interface, fragment, latestBlockNumber)
 }
 
 // Similar to useMultipleContractSingleData but instead of multiple contracts on one chain,
@@ -315,7 +317,7 @@ export function useMultiChainMultiContractSingleData(
   const chainIdToResults = useMultichainCallsDataSubscription(context, chainToCalls, options as ListenerOptions)
 
   // TODO(WEB-2097): Multichain states are not referentially stable, because they cannot use the
-  // same codepath (eg useStableCallStates).
+  // same codepath (eg useCallStates).
   return useMemo(() => {
     return getChainIds(chainIdToResults).reduce((combinedResults, chainId) => {
       const latestBlockNumber = chainToBlockNumber?.[chainId]
