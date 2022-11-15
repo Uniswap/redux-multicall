@@ -15,11 +15,19 @@ jobs:
           registry-url: https://registry.npmjs.org
 
       - run: yarn install --frozen-lockfile
+      - run: yarn contracts:compile
+
+      - run: yarn test
+        env:
+          INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
+          INFURA_PROJECT_SECRET: ${{ secrets.INFURA_PROJECT_SECRET }}
+      - run: yarn test:e2e
+        env:
+          INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
+          INFURA_PROJECT_SECRET: ${{ secrets.INFURA_PROJECT_SECRET }}
 
       - run: yarn release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
-          INFURA_PROJECT_SECRET: ${{ secrets.INFURA_PROJECT_SECRET }}
           NPM_CONFIG_USERCONFIG: /dev/null
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
