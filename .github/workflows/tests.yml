@@ -20,6 +20,7 @@ jobs:
           registry-url: https://registry.npmjs.org
 
       - run: yarn install --frozen-lockfile
+      - run: yarn contracts:compile
 
       - name: Unit tests
         run: yarn test
