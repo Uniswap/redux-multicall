@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom'
 import { act } from 'react-dom/test-utils'
 import { combineReducers, configureStore, Store } from '@reduxjs/toolkit'
-import React from 'react'
+import React, { useRef } from 'react'
 import { render, unmountComponentAtNode } from 'react-dom'
 import { Provider } from 'react-redux'
 
@@ -56,51 +56,82 @@ describe('multicall hooks', () => {
       return <>{calls.map((call, i) => `${toCallKey(call)}:${data[i].data}`).join(';')}</>
     }
 
-    it('returns data matching calls', () => {
-      const callA = { address: 'a', callData: '' }
-      const callB = { address: 'b', callData: '' }
-      updateCallResult(callA, '0xa')
-      updateCallResult(callB, '0xb')
+    describe('stabilizes values', () => {
+      it('returns data matching calls', () => {
+        const callA = { address: 'a', callData: '' }
+        const callB = { address: 'b', callData: '' }
+        updateCallResult(callA, '0xa')
+        updateCallResult(callB, '0xb')
 
-      render(
-        <Provider store={store}>
-          <Caller calls={[callA]} />
-        </Provider>,
-        container
-      )
-      expect(container?.textContent).toBe('a-:0xa')
+        render(
+          <Provider store={store}>
+            <Caller calls={[callA]} />
+          </Provider>,
+          container
+        )
+        expect(container?.textContent).toBe('a-:0xa')
 
-      render(
-        <Provider store={store}>
-          <Caller calls={[callB]} />
-        </Provider>,
-        container
-      )
-      expect(container?.textContent).toBe('b-:0xb')
+        render(
+          <Provider store={store}>
+            <Caller calls={[callB]} />
+          </Provider>,
+          container
+        )
+        expect(container?.textContent).toBe('b-:0xb')
 
-      render(
-        <Provider store={store}>
-          <Caller calls={[callA, callB]} />
-        </Provider>,
-        container
-      )
-      expect(container?.textContent).toBe('a-:0xa;b-:0xb')
-    })
+        render(
+          <Provider store={store}>
+            <Caller calls={[callA, callB]} />
+          </Provider>,
+          container
+        )
+        expect(container?.textContent).toBe('a-:0xa;b-:0xb')
+      })
 
-    it('returns updates immediately', () => {
-      const call = { address: 'a', callData: '' }
-      updateCallResult(call, '0xa')
+      it('returns updates immediately', () => {
+        const call = { address: 'a', callData: '' }
+        updateCallResult(call, '0xa')
 
-      render(
-        <Provider store={store}>
-          <Caller calls={[call]} />
-        </Provider>,
-        container
-      )
-      expect(container?.textContent).toBe('a-:0xa')
+        render(
+          <Provider store={store}>
+            <Caller calls={[call]} />
+          </Provider>,
+          container
+        )
+        expect(container?.textContent).toBe('a-:0xa')
 
-      updateCallResult(call, '0xb')
-      expect(container?.textContent).toBe('a-:0xb')
+        updateCallResult(call, '0xb')
+        expect(container?.textContent).toBe('a-:0xb')
+      })
+
+      it('ignores subsequent updates if data is stable', () => {
+        function Caller({ calls }: { calls: Call[] }) {
+          const data = useCallsDataSubscription(context, 1, calls)
+          const { current: initialData } = useRef(data)
+          return <>{(data === initialData).toString()}</>
+        }
+        const mock = jest.fn(Caller)
+        const MockCaller: typeof Caller = mock
+
+        const call = { address: 'a', callData: '' }
+        updateCallResult(call, '0xa')
+
+        render(
+          <Provider store={store}>
+            <MockCaller calls={[call]} />
+          </Provider>,
+          container
+        )
+        expect(container?.textContent).toBe('true')
+
+        // stable update
+        updateCallResult(call, '0xa')
+        expect(container?.textContent).toBe('true')
+
+        // unrelated update
+        updateCallResult({ address: 'b', callData: '' }, '0xb')
+        expect(container?.textContent).toBe('true')
+      })
     })
 
     describe('utilizes correct blocksPerFetch values from defaultListenerOptions in store', () => {
