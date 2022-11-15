@@ -16,16 +16,6 @@ jobs:
 
       - run: yarn install --frozen-lockfile
       - run: yarn postinstall
-      - run: yarn build
-
-      - run: yarn test
-        env:
-          INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
-          INFURA_PROJECT_SECRET: ${{ secrets.INFURA_PROJECT_SECRET }}
-      - run: yarn test:e2e
-        env:
-          INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
-          INFURA_PROJECT_SECRET: ${{ secrets.INFURA_PROJECT_SECRET }}
 
       - run: yarn release
         env:
