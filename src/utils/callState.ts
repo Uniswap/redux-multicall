@@ -1,6 +1,5 @@
 import type { FunctionFragment, Interface } from '@ethersproject/abi'
-import deepEqual from 'fast-deep-equal'
-import { useMemo, useRef } from 'react'
+import { useMemo } from 'react'
 import { INVALID_CALL_STATE, LOADING_CALL_STATE } from '../constants'
 import type { CallResult, CallState, CallStateResult } from '../types'
 
@@ -13,41 +12,33 @@ export function useStableCallStates(
   fragment: ((i: number) => FunctionFragment | undefined) | FunctionFragment | undefined,
   latestBlockNumber: number | undefined
 ): CallState[] {
-  const lastStates = useRef<CallState[]>([])
+  const lowestBlockNumber = useMemo(() => results.reduce((memo, result) => result.blockNumber ? Math.min(result.blockNumber, memo) : memo, 0), [results])
+  const syncingBlockNumber = Math.max(lowestBlockNumber, latestBlockNumber ?? 0)
+
   return useMemo(() => {
-    const callStates = results.map((result, i) => {
+    return results.map((result, i) => {
       const resultFragment = typeof fragment === 'function' ? fragment(i) : fragment
-      const callState = toCallState(result, contractInterface, resultFragment, latestBlockNumber)
-
-      // if the result has not changed, return a referentially stable result
-      const lastState = lastStates.current[i]
-      if (deepEqual(callState, lastState)) {
-        return lastState
-      }
-
-      return callState
+      // Avoid refreshing the results with every changing block number (eg latestBlockNumber).
+      // Instead, only refresh the results if they need to be synced - if there is a result which is stale.
+      return toCallState(result, contractInterface, resultFragment, syncingBlockNumber)
     })
-    // if no results have changed, return a referentially stable array
-    if (callStates.every((result, i) => result === lastStates.current[i])) return lastStates.current
-
-    // if some results have changed, update the stable array
-    return (lastStates.current = callStates)
-  }, [contractInterface, fragment, latestBlockNumber, results])
+  }, [contractInterface, fragment, syncingBlockNumber])
 }
 
 export function toCallState(
   callResult: CallResult | undefined,
   contractInterface: Interface | undefined,
   fragment: FunctionFragment | undefined,
-  latestBlockNumber: number | undefined
+  syncingBlockNumber: number | undefined
 ): CallState {
   if (!callResult) return INVALID_CALL_STATE
   const { valid, data, blockNumber } = callResult
   if (!valid) return INVALID_CALL_STATE
-  if (valid && !blockNumber) return LOADING_CALL_STATE
-  if (!contractInterface || !fragment || !latestBlockNumber) return LOADING_CALL_STATE
+  if (!blockNumber) return LOADING_CALL_STATE
+  syncingBlockNumber = syncingBlockNumber || blockNumber
+  if (!contractInterface || !fragment) return LOADING_CALL_STATE
   const success = data && data.length > 2
-  const syncing = (blockNumber ?? 0) < latestBlockNumber
+  const syncing = (blockNumber ?? 0) < syncingBlockNumber
   let result: CallStateResult | undefined = undefined
   if (success && data) {
     try {

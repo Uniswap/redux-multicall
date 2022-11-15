@@ -73,8 +73,5 @@
     "rules": {
       "no-useless-computed-key": "off"
     }
-  },
-  "dependencies": {
-    "fast-deep-equal": "^3.1.1"
   }
 }

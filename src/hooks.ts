@@ -1,6 +1,6 @@
 import { Contract } from '@ethersproject/contracts'
 import { Interface } from '@ethersproject/abi'
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { batch, useDispatch, useSelector } from 'react-redux'
 import { INVALID_CALL_STATE, INVALID_RESULT, DEFAULT_BLOCKS_PER_FETCH } from './constants'
 import type { MulticallContext } from './context'
@@ -52,7 +52,7 @@ export function useCallsDataSubscription(
     }
   }, [actions, chainId, dispatch, listenerOptions, serializedCallKeys, defaultListenerOptions])
 
-  return useMemo(() => {
+  const results = useMemo(() => {
     // Construct results using a for-loop to handle sparse arrays.
     // Array.prototype.map would skip empty entries.
     let results: CallResult[] = []
@@ -68,6 +68,22 @@ export function useCallsDataSubscription(
     }
     return results
   }, [callResults, calls, chainId])
+
+  // Force the results to be referentially stable if they have not changed.
+  // This is necessary because *all* callResults are passed as deps when initially memoizing the results.
+  const lastResults = useRef(results)
+  return useMemo(() => {
+    if (areCallResultsEqual(results, lastResults.current)) {
+      return lastResults.current
+    } else {
+      return (lastResults.current = results)
+    }
+  }, [results])
+}
+
+function areCallResultsEqual(a: CallResult[], b: CallResult[]) {
+  if (a.length !== b.length) return false
+  return a.every((_, i) => a[i].valid === b[i].valid && a[i].data === b[i].data && a[i].blockNumber === b[i].blockNumber)
 }
 
 // Similar to useCallsDataSubscription above but for subscribing to
