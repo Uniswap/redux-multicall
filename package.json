@@ -24,7 +24,7 @@
     "test:e2e": "tsdx test integration-tests",
     "build": "tsdx build",
     "watch": "tsdx watch",
-    "prepublishOnly": "yarn contracts:compile && tsdx build",
+    "prepublishOnly": "yarn contracts:compile && yarn build",
     "release": "semantic-release"
   },
   "devDependencies": {
