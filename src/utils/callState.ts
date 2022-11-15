@@ -36,13 +36,17 @@ export function toCallState(
   fragment: FunctionFragment | undefined,
   syncingBlockNumber: number | undefined
 ): CallState {
-  if (!callResult) return INVALID_CALL_STATE
-  const { valid, data, blockNumber } = callResult
-  if (!valid) return INVALID_CALL_STATE
-  if (!blockNumber) return LOADING_CALL_STATE
-  if (!contractInterface || !fragment || !syncingBlockNumber) return LOADING_CALL_STATE
+  if (!callResult || !callResult.valid) {
+    return INVALID_CALL_STATE
+  }
+
+  const { data, blockNumber } = callResult
+  if (!blockNumber || !contractInterface || !fragment || !syncingBlockNumber) {
+    return LOADING_CALL_STATE
+  }
+
   const success = data && data.length > 2
-  const syncing = (blockNumber ?? 0) < syncingBlockNumber
+  const syncing = blockNumber < syncingBlockNumber
   let result: CallStateResult | undefined = undefined
   if (success && data) {
     try {
