@@ -58,8 +58,8 @@
     "@ethersproject/bignumber": "5",
     "@ethersproject/contracts": "5",
     "@reduxjs/toolkit": "1",
-    "react": "17",
-    "react-redux": "7"
+    "react": ">=17",
+    "react-redux": ">=7"
   },
   "engines": {
     "node": ">=10"
