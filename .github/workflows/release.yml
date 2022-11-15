@@ -15,8 +15,7 @@ jobs:
           registry-url: https://registry.npmjs.org
 
       - run: yarn install --frozen-lockfile
-      - run: yarn postinstall
-      - run: yarn build
+      - run: yarn contracts:compile
 
       - run: yarn test
         env:
@@ -29,6 +28,6 @@ jobs:
 
       - run: yarn release
         env:
-          NPM_CONFIG_USERCONFIG: /dev/null
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_USERCONFIG: /dev/null
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

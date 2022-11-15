@@ -20,8 +20,7 @@ jobs:
           registry-url: https://registry.npmjs.org
 
       - run: yarn install --frozen-lockfile
-      - run: yarn postinstall
-      - run: yarn build
+      - run: yarn contracts:compile
 
       - name: Unit tests
         run: yarn test
@@ -34,4 +33,6 @@ jobs:
         env:
           INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
           INFURA_PROJECT_SECRET: ${{ secrets.INFURA_PROJECT_SECRET }}
-        
+
+      - name: Typechecking
+        run: yarn build
