@@ -52,40 +52,40 @@ export function useCallsDataSubscription(
     }
   }, [actions, chainId, dispatch, listenerOptions, serializedCallKeys, defaultListenerOptions])
 
-  const results = useMemo(() => {
+  const lastResults = useRef<CallResult[]>([])
+  return useMemo(() => {
+    let isChanged = lastResults.current.length !== calls.length
+
     // Construct results using a for-loop to handle sparse arrays.
     // Array.prototype.map would skip empty entries.
     let results: CallResult[] = []
     for (let i = 0; i < calls.length; ++i) {
       const call = calls[i]
-      if (!chainId || !call) {
-        results.push(INVALID_RESULT)
-        continue
+      let result = INVALID_RESULT
+      if (chainId && call) {
+        const callResult = callResults[chainId]?.[toCallKey(call)]
+        result = {
+          valid: true,
+          data: callResult?.data && callResult.data !== '0x' ? callResult.data : undefined,
+          blockNumber: callResult?.blockNumber,
+        }
       }
-      const result = callResults[chainId]?.[toCallKey(call)]
-      const data = result?.data && result.data !== '0x' ? result.data : undefined
-      results.push({ valid: true, data, blockNumber: result?.blockNumber })
-    }
-    return results
-  }, [callResults, calls, chainId])
 
-  // Force the results to be referentially stable if they have not changed.
-  // This is necessary because *all* callResults are passed as deps when initially memoizing the results.
-  const lastResults = useRef(results)
-  return useMemo(() => {
-    if (areCallResultsEqual(results, lastResults.current)) {
-      return lastResults.current
-    } else {
-      return (lastResults.current = results)
+      isChanged = isChanged || !areCallResultsEqual(result, lastResults.current[i])
+      results.push(result)
     }
-  }, [results])
+
+    // Force the results to be referentially stable if they have not changed.
+    // This is necessary because *all* callResults are passed as deps when initially memoizing the results.
+    if (isChanged) {
+      lastResults.current = results
+    }
+    return lastResults.current
+  }, [callResults, calls, chainId])
 }
 
-function areCallResultsEqual(a: CallResult[], b: CallResult[]) {
-  if (a.length !== b.length) return false
-  return a.every(
-    (_, i) => a[i].valid === b[i].valid && a[i].data === b[i].data && a[i].blockNumber === b[i].blockNumber
-  )
+function areCallResultsEqual(a: CallResult, b: CallResult) {
+  return a.valid === b.valid && a.data === b.data && a.blockNumber === b.blockNumber
 }
 
 // Similar to useCallsDataSubscription above but for subscribing to
